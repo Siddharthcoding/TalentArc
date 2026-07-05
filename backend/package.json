@@ -1,0 +1,29 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "main": "app.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test-phase1": "node scripts/test-phase1.js",
+    "test-phase2": "node scripts/test-phase2.js",
+    "test-phase3": "node scripts/test-phase3.js",
+    "test-phase4": "node scripts/test-phase4.js",
+    "test-phase4-llm": "node scripts/test-phase4-llm.js",
+    "start": "node app.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@huggingface/inference": "^4.13.22",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "file-type": "^22.0.1",
+    "mammoth": "^1.12.0",
+    "multer": "^2.2.0",
+    "pdf-parse": "^2.4.5"
+  }
+}
