@@ -17,6 +17,7 @@ const SECTION_PATTERNS = [
             /^what you('ll| will) be doing\b/i, /^duties\b/i,
             /^job responsibilities\b/i, /^primary responsibilities\b/i,
             /^what the role entails\b/i,
+            /^job description\b/i,
         ],
     },
     {
@@ -30,6 +31,8 @@ const SECTION_PATTERNS = [
             /^ideal candidate\b/i, /^key requirements\b/i,
             /^essential requirements\b/i, /^technical requirements\b/i,
             /^skill requirements\b/i, /^what you need\b/i,
+            /^apply if you are\b/i, /^eligibility\b/i,
+            /^eligibility criteria\b/i,
         ],
     },
     {
@@ -115,11 +118,180 @@ const STOP_WORDS = new Set([
     "using", "based", "work", "role", "team", "new",
 ]);
 
+const GENERIC_JD_WORDS = new Set([
+    "able", "above", "across", "achieve", "action", "active", "activities",
+    "activity", "actual", "admin", "after", "again", "align", "along",
+    "already", "also", "among", "analysis", "another", "any", "apply",
+    "approach", "appropriate", "areas", "around", "assist", "available",
+    "back", "based", "become", "becomes", "being", "below", "best",
+    "better", "between", "bring", "brings", "build", "building", "business",
+    "campus", "candidate", "candidates", "career", "certain", "change",
+    "check", "clear", "close", "come", "comes", "coming", "common",
+    "company", "complete", "completion", "compliance", "concern",
+    "conduct", "consider", "continued", "coordinate", "core", "corner",
+    "corporate", "correct", "could", "create", "creating", "creation",
+    "current", "currently", "daily", "data", "day", "days", "define",
+    "degree", "deliver", "delivery", "department", "depend", "dependent",
+    "describe", "description", "design", "desired", "detail", "details",
+    "determine", "develop", "developing", "development", "different",
+    "direct", "directly", "distribute", "diverse", "document", "does",
+    "doing", "done", "down", "drive", "driven", "driving", "during",
+    "each", "effective", "effectively", "effort", "either", "employ",
+    "employee", "employer", "employment", "enable", "encourage",
+    "end", "engage", "engaged", "engineering", "ensure", "entire",
+    "entry", "environment", "equal", "especially", "essential",
+    "establish", "evaluate", "even", "event", "events", "every",
+    "everyone", "everything", "excel", "excellent", "execute",
+    "existing", "expand", "expect", "expected", "experience",
+    "experienced", "expert", "expertise", "explore", "extend",
+    "extensive", "external", "extra", "extreme", "facilitate",
+    "faculty", "fail", "fair", "familiar", "field", "file", "files",
+    "final", "finally", "find", "finish", "firm", "first", "follow",
+    "following", "form", "former", "forward", "foundation", "frame",
+    "framework", "free", "frequency", "frequently", "fresh", "front",
+    "full", "fully", "function", "functional", "functions", "funding",
+    "further", "future", "gain", "gather", "general", "generate",
+    "getting", "give", "given", "gives", "giving", "global", "goal",
+    "goals", "going", "good", "grade", "group", "groups", "grow",
+    "growing", "growth", "guarantee", "guide", "guideline", "hand",
+    "handle", "handling", "happen", "happy", "hard", "head", "help",
+    "helpful", "helping", "high", "higher", "highest", "highly",
+    "hiring", "hold", "holding", "home", "honest", "host", "hour",
+    "hours", "house", "huge", "human", "idea", "identify", "impact",
+    "implement", "implementation", "improve", "improved", "improvement",
+    "improving", "include", "included", "includes", "including",
+    "increase", "increased", "increasing", "independent", "individual",
+    "industry", "influence", "info", "inform", "information", "initiate",
+    "initiative", "innovation", "innovative", "input", "insight",
+    "inspect", "install", "instance", "integrate", "integrated",
+    "integration", "integrity", "intend", "intense", "interact",
+    "interaction", "interested", "interesting", "internal", "international",
+    "internship", "introduce", "investigate", "investment", "invite",
+    "involve", "involved", "involvement", "issue", "issues", "item",
+    "join", "joining", "knowledge", "known", "large", "largely", "latest",
+    "launch", "lead", "leader", "leadership", "leading", "leads",
+    "learn", "learning", "leave", "level", "lever", "leverage",
+    "life", "like", "likely", "limit", "line", "lines", "list",
+    "listen", "live", "local", "locate", "located", "location",
+    "log", "long", "longer", "look", "looking", "lot", "love",
+    "low", "lower", "machine", "main", "maintain", "maintaining",
+    "maintenance", "major", "make", "makes", "making", "manage",
+    "managed", "management", "manager", "managers", "managing",
+    "manner", "many", "market", "marketing", "match", "materials",
+    "matter", "maximize", "mean", "meaning", "measure", "meet",
+    "meeting", "member", "members", "mentor", "mentoring", "metrics",
+    "might", "mind", "minimize", "minimum", "minute", "mission",
+    "mode",     "india", "kiit", "juspay", "model", "moment", "monitor", "month", "monthly", "months",
+    "much", "multiple", "must", "natural", "nature", "near", "need",
+    "needed", "needs", "network", "never", "next", "normal", "note",
+    "noted", "nothing", "notice", "notify", "now", "number", "object",
+    "objective", "obtain", "occur", "off", "offer", "offering",
+    "office", "often", "ongoing", "open", "operate", "operating",
+    "operation", "operational", "operations", "opportunities",
+    "opportunity", "optimize", "option", "order", "organize",
+    "organized", "organization", "organizational", "original",
+    "other", "outcome", "output", "outside", "outsource", "overall",
+    "overcome", "oversee", "own", "owner", "ownership", "paper",
+    "part", "participate", "participation", "particular", "particularly",
+    "partner", "parts", "passionate", "people", "per", "perfection", "perform",
+    "performance", "physical",
+    "performing", "period", "permit", "person", "personal", "personnel",
+    "perspective", "place", "plan", "planning", "plans", "plant",
+    "platform", "play", "please", "pleasure", "point", "policy",
+    "portion", "position", "positive", "possess", "possible", "post",
+    "potential", "power", "powerful", "practice", "prefer", "preference",
+    "preferred", "premier", "preparation", "prepare", "present",
+    "presentation", "preserve", "press", "pressure", "prevent",
+    "previous", "previously", "primary", "principle", "prior",
+    "priority", "problem", "procedure", "proceed", "process",
+    "processes", "processing", "produce", "producer", "product",
+    "production", "productive", "productivity", "professional",
+    "professor", "proficiency", "proficient", "program", "programme",
+    "progress", "project", "projects", "promote", "prompt", "proper",
+    "properly", "property", "proposal", "propose", "protect",
+    "protection", "prove", "provide", "provided", "provider",
+    "provides", "providing", "publish", "purpose", "pursue",
+    "pursuing", "put", "qualification", "qualifications", "qualified",
+    "qualify", "quality", "quarter", "question", "quick", "quickly",
+    "quiet", "rate", "rather", "reach", "react", "read", "readiness",
+    "reading", "ready", "real", "realistic", "reality", "realize",
+    "really", "reason", "receive", "recent", "recently", "recognize",
+    "recommend", "record", "recover", "recruit", "recruitment",
+    "reduce", "reduced", "refer", "reference", "reflect", "regard",
+    "regarding", "regardless", "region", "register", "regular",
+    "regularly", "relate", "related", "relation", "relationship",
+    "relevant", "reliable", "relief", "religion", "relocate",
+    "remain", "remedy", "remote", "remove", "renew", "report",
+    "reporting", "represent", "representative", "request", "require",
+    "required", "requirement", "requirements", "research", "resource",
+    "resources", "respect", "respond", "responsibilities",
+    "responsibility", "responsible", "rest", "restore", "result",
+    "results", "resume", "retain", "retirement", "return", "revenue",
+    "review", "revise", "right", "risk", "role", "rotation", "round",
+    "routine", "rule", "run", "running", "safe", "safety", "sales",
+    "satisfaction", "satisfy", "scale", "scalable", "schedule",
+    "scheduling", "school", "science", "scope", "screen", "search",
+    "second", "section", "secure", "security", "seek", "seeking",
+    "select", "selection", "self", "send", "senior", "sense", "sensitive",
+    "separate", "sequence", "series", "serious", "serve", "service",
+    "services", "set", "setup", "settle", "several", "shape", "share",
+    "shared", "sheet", "shift", "short", "shortly", "show", "significant",
+    "significantly", "similar", "simple", "simply", "single", "sister",
+    "site", "situation", "size", "skill", "skills", "small", "smooth",
+    "social", "software", "solution", "solutions", "solve", "some",
+    "someone", "something", "sometimes", "soon", "sophisticated",
+    "sort", "sound", "source", "space", "speak", "special", "specialist",
+    "specific", "specifically", "specify", "spend", "spending", "sponsor",
+    "spot", "spread", "stable", "staff", "stage", "stakeholder",
+    "stakeholders", "stand", "standard", "standards", "start",
+    "starting", "state", "statement", "status", "stay", "still",
+    "stock", "stop", "storage", "store", "strategic", "strategy",
+    "stream", "street", "strength", "strengthen", "stress", "stretch",
+    "strict", "strong", "strongly", "structural", "structure",
+    "student", "students", "study", "subsequent", "substantial",
+    "substitute", "succeed", "success", "successful", "suggest",
+    "suitable", "summarize", "superior", "supervise", "supervision",
+    "supervisor", "supplier", "support", "supported", "supporting",
+    "supports", "suppose", "sure", "surface", "surround", "survey",
+    "sustain", "sustainable", "system", "systems", "table", "tackle",
+    "take", "takes", "taking", "talent", "talk", "target", "task",
+    "tasks", "teach", "teacher", "teaching", "team", "teams",
+    "technical", "technique", "techniques", "technology", "tell",
+    "temporary", "tend", "term", "terms", "terrific", "test",
+    "testing", "thing", "things", "think", "thinking", "third",
+    "thorough", "thought", "threat", "through", "throughout",
+    "time", "timely", "times", "today", "together", "tolerate",
+    "tomorrow", "tool", "tools", "topic", "total", "touch",
+    "toward", "track", "tracking", "trade", "traditional",
+    "train", "trained", "training", "transfer", "transform",
+    "transformation", "transition", "transmit", "transparent",
+    "travel", "treat", "trend", "trial", "troubleshoot", "true",
+    "truly", "trust", "try", "turn", "two", "type", "types",
+    "typical", "ultimately", "unable", "under", "undergo",
+    "understand", "understanding", "undertake", "unique", "unit",
+    "unite", "unity", "universal", "university", "unless", "unlike",
+    "unlikely", "update", "upgrade", "upon", "upper", "upset",
+    "urban", "urge", "urgent", "use", "used", "useful", "user",
+    "users", "uses", "using", "usual", "vacancy", "valid", "value",
+    "values", "variety", "various", "vendor", "venture", "verify",
+    "version", "versus", "vertical", "very", "viable", "view",
+    "virtual", "vision", "visit", "visual", "vital", "voice",
+    "volume", "voluntary", "volunteer", "wait", "want", "wanted",
+    "warrant", "way", "ways", "weak", "wealth", "weekly", "weight",
+    "welcome", "well", "wide", "widespread", "width", "willing",
+    "win", "window", "wish", "within", "without", "woman", "word",
+    "work", "worked", "worker", "workforce", "working", "workload",
+    "works", "workshop", "workshops", "world", "worldwide", "worry",
+    "worst", "worth", "would", "write", "writer", "writing", "written",
+    "wrong", "year", "yearly", "years", "young",
+    "ambitious", "challenges", "constant", "engineer", "informed", "interests",
+    "learner", "marathoner", "seeker", "stretches", "yourself",
+]);
 const ACTION_VERB_PATTERN = /^\s*(?:develop|design|build|create|implement|manage|lead|drive|oversee|coordinate|establish|define|architect|engineer|maintain|support|improve|optimize|enhance|monitor|troubleshoot|resolve|analyze|evaluate|assess|review|audit|test|deploy|integrate|collaborate|communicate|mentor|train|guide|participate|contribute|ensure|deliver|provide|perform|execute|conduct|prepare|document|report|write|configure|customize|administer|operate|facilitate|champion|advise|consult|research|investigate|identify|recommend|prioritize|plan|organize|direct|supervise|own|automate|streamline|restructure|migrate|scale|secure)\b/i;
 
 const ALL_TECH_SKILLS_FLAT = [...new Set(Object.values(TECH_SKILLS).flat())];
 
-const SKILLS_TO_SKIP = new Set(["r", "c", "go"]);
+const SKILLS_TO_SKIP = new Set(["r", "c", "go", "rest", "less", "sass", "notion", "shell"]);
 
 const detectSections = (lines) => {
     const sections = {
@@ -308,10 +480,19 @@ const extractEducation = (sections) => {
     };
 };
 
+const MONTH_WORDS = new Set([
+    "january", "february", "march", "april", "may", "june", "july",
+    "august", "september", "october", "november", "december",
+    "jan", "feb", "mar", "apr", "jun", "jul", "aug", "sep", "oct", "nov", "dec",
+]);
+
+const isNumericOrdinal = (word) => /^\d+(?:st|nd|rd|th)$/.test(word);
+
 const extractKeywords = (normalizedText, allMatchedSkills) => {
     const tokens = normalizedText
         .toLowerCase()
         .split(/[^a-z0-9+#.]+/)
+        .map((t) => t.replace(/\.+$/, ""))
         .filter((t) => t.length >= 3 && !STOP_WORDS.has(t) && !/^\d+$/.test(t));
 
     const freq = {};
@@ -319,31 +500,22 @@ const extractKeywords = (normalizedText, allMatchedSkills) => {
         freq[token] = (freq[token] || 0) + 1;
     }
 
-    const words = tokens;
-    const bigrams = [];
-    for (let i = 0; i < words.length - 1; i++) {
-        bigrams.push(`${words[i]} ${words[i + 1]}`);
-    }
-
-    const bigramFreq = {};
-    for (const bg of bigrams) {
-        bigramFreq[bg] = (bigramFreq[bg] || 0) + 1;
-    }
-
-    const sortedWords = Object.entries(freq)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 30)
-        .map((e) => e[0]);
-
-    const sortedBigrams = Object.entries(bigramFreq)
-        .filter(([, count]) => count > 1)
+    const additionalEntries = Object.entries(freq)
+        .filter(([word, count]) => {
+            if (GENERIC_JD_WORDS.has(word)) return false;
+            if (MONTH_WORDS.has(word)) return false;
+            if (isNumericOrdinal(word)) return false;
+            if (allMatchedSkills.includes(word)) return false;
+            if (word.length < 6) return count >= 3;
+            return count >= 2;
+        })
         .sort((a, b) => b[1] - a[1])
         .slice(0, 10)
         .map((e) => e[0]);
 
-    const combined = [...new Set([...allMatchedSkills, ...sortedBigrams, ...sortedWords])];
+    const combined = [...new Set([...allMatchedSkills, ...additionalEntries])];
 
-    return combined.slice(0, 40);
+    return combined.slice(0, 30);
 };
 
 const parseJDText = (normalizedText) => {
@@ -367,12 +539,21 @@ const parseJDText = (normalizedText) => {
 
     const requiredSkills = extractSkillsFromText(sections.requirements.join(" "));
     const preferredSkills = extractSkillsFromText(sections.preferred.join(" "));
+    const responsibilitySkills = extractSkillsFromText(sections.responsibilities.join(" "));
 
     const experience = extractExperience(sections);
     const education = extractEducation(sections);
 
-    const allMatchedSkills = [...new Set([...requiredSkills, ...preferredSkills])];
-    const keywords = extractKeywords(normalizedText, allMatchedSkills);
+    const allMatchedSkills = [...new Set([...requiredSkills, ...preferredSkills, ...responsibilitySkills])];
+    const relevantText = [
+        ...sections.requirements,
+        ...sections.preferred,
+        ...sections.responsibilities,
+        ...sections.education,
+    ].join(" ");
+    const keywords = relevantText.trim()
+        ? extractKeywords(relevantText, allMatchedSkills)
+        : extractKeywords(normalizedText, allMatchedSkills);
 
     return {
         company,

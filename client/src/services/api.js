@@ -40,4 +40,17 @@ export async function analyzeResume(file) {
   return data.data;
 }
 
+export async function matchResumeToJD(file, jdText, jdFile) {
+  const formData = new FormData();
+  formData.append('resume', file);
+  if (jdText && typeof jdText === 'string' && jdText.trim()) {
+    formData.append('jdText', jdText);
+  } else if (jdFile) {
+    formData.append('jdFile', jdFile);
+  }
+  const { data } = await apiClient.post('/jd/match', formData);
+  if (!data.success) throw { title: 'Matching Failed', message: data.error || 'Unknown error' };
+  return data.data;
+}
+
 export default apiClient;

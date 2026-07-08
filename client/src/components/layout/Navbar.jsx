@@ -7,9 +7,10 @@ import AnimatedButton from '@/components/ui/AnimatedButton';
 import { cn } from '@/utils/cn';
 
 const navLinks = [
-  { href: '/', label: 'Home' },
-  { href: '/features', label: 'Features' },
+  { href: '/', label: 'ATS Checker' },
+  { href: '/jd-matcher', label: 'JD Matcher' },
   { href: '/pricing', label: 'Pricing' },
+  { href: '/features', label: 'Docs' },
 ];
 
 export default function Navbar() {
@@ -66,9 +67,9 @@ export default function Navbar() {
         <div className="flex items-center gap-3">
           <ThemeToggle />
           <Link to="/dashboard" className="hidden md:block">
-            <AnimatedButton variant="primary" className="text-sm !px-5 !py-2.5">
-              Analyze Resume
-              <ArrowRight className="w-4 h-4" />
+            <AnimatedButton variant="primary" className="text-sm !px-5 !py-2.5 group">
+              Get Started
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </AnimatedButton>
           </Link>
           <button
@@ -105,9 +106,9 @@ export default function Navbar() {
                 </Link>
               ))}
               <Link to="/dashboard" className="block pt-2">
-                <AnimatedButton variant="primary" className="w-full text-sm !px-5 !py-3">
-                  Analyze Resume
-                  <ArrowRight className="w-4 h-4" />
+                <AnimatedButton variant="primary" className="w-full text-sm !px-5 !py-3 group">
+                  Get Started
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                 </AnimatedButton>
               </Link>
             </div>

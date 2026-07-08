@@ -4,6 +4,7 @@ import processResume from "../services/parser.service.js";
 import { runJDMatching, runAsyncMatching } from "../services/jdMatching.service.js";
 import aggregateMatchScores from "../services/jdAggregator.service.js";
 import { generateJDReportLLM } from "../services/jdReport.service.js";
+import enhanceJD from "../services/jdEnhancer.service.js";
 
 const matchJD = async (req, res) => {
     try {
@@ -36,14 +37,16 @@ const matchJD = async (req, res) => {
             });
         }
 
+        const jdEnhanced = await enhanceJD(jdResult.rawText || "", jdResult);
+
         const syncResults = runJDMatching(
-            jdResult,
+            jdEnhanced,
             resumeResult.structured,
             resumeResult.normalizedText
         );
 
         const asyncResults = await runAsyncMatching(
-            jdResult,
+            jdEnhanced,
             resumeResult.structured,
             resumeResult.normalizedText,
             syncResults
@@ -53,7 +56,7 @@ const matchJD = async (req, res) => {
 
         const aggregated = aggregateMatchScores(allResults);
         const report = await generateJDReportLLM(
-            jdResult,
+            jdEnhanced,
             resumeResult.structured,
             allResults,
             aggregated
@@ -67,12 +70,12 @@ const matchJD = async (req, res) => {
                     structured: resumeResult.structured,
                 },
                 jd: {
-                    company: jdResult.company,
-                    requiredSkills: jdResult.requiredSkills,
-                    preferredSkills: jdResult.preferredSkills,
-                    responsibilities: jdResult.responsibilities,
-                    experience: jdResult.experience,
-                    education: jdResult.education,
+                    company: jdEnhanced.company,
+                    requiredSkills: jdEnhanced.requiredSkills,
+                    preferredSkills: jdEnhanced.preferredSkills,
+                    responsibilities: jdEnhanced.responsibilities,
+                    experience: jdEnhanced.experience,
+                    education: jdEnhanced.education,
                 },
                 matching: allResults,
                 aggregated,

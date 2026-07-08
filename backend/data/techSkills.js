@@ -2,8 +2,8 @@ const TECH_SKILLS = {
     languages: [
         "javascript", "typescript", "python", "java", "c++", "c#", "go", "rust",
         "swift", "kotlin", "php", "ruby", "scala", "perl", "lua", "r",
-        "dart", "elixir", "clojure", "haskell", "erlang", "groovy",
-        "sql", "html", "css", "sass", "less", "shell", "bash",
+        "dart", "elixir", "clojure", "haskell", "purescript", "erlang", "groovy",
+        "sql", "html", "css", "bash",
     ],
     frontend: [
         "react", "reactjs", "react.js", "angular", "vue", "vuejs", "svelte",
@@ -11,7 +11,7 @@ const TECH_SKILLS = {
         "redux", "mobx", "jquery", "bootstrap", "tailwind", "tailwindcss",
         "materialui", "mui", "chakra", "shadcn",
         "webpack", "vite", "babel", "esbuild",
-        "html5", "css3", "sass", "less", "styled-components",
+        "html5", "css3", "styled-components",
     ],
     backend: [
         "nodejs", "node.js", "express", "expressjs", "express.js",
@@ -20,14 +20,14 @@ const TECH_SKILLS = {
         "spring", "springboot", "spring boot",
         "rails", "ruby on rails", "laravel", "symfony",
         "asp.net", "dotnet", ".net",
-        "graphql", "apollo", "rest", "restful",
+        "graphql", "apollo", "restful",
         "grpc", "websocket", "socket.io",
     ],
     databases: [
         "mongodb", "postgresql", "postgres", "mysql", "sqlite",
         "redis", "elasticsearch", "cassandra", "dynamodb",
         "oracle", "mariadb", "couchdb", "firebase",
-        "prisma", "typeorm", "sequelize", "mongoose",
+        "prisma", "typeorm", "sequelize", "mongoose", "presto",
         "kafka", "rabbitmq",
     ],
     cloud: [
@@ -45,7 +45,7 @@ const TECH_SKILLS = {
     ],
     tools: [
         "git", "github", "gitlab", "bitbucket",
-        "jira", "confluence", "notion",
+        "jira", "confluence",
         "postman", "swagger", "openapi",
         "figma", "sketch", "adobe xd",
         "vscode", "intellij", "webstorm",

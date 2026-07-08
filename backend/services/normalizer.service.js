@@ -1,4 +1,4 @@
-const BULLET_PATTERN = /[•●▪‣▸▹►▻◆◇○◉◎◈⁃⁌⁍→⇒⇨➢➤▪️▫️]\s*/g;
+const BULLET_PATTERN = /[•●▪‣▸▹►▻◆◇○◉◎◈⁃⁌⁍→⇒⇨➢➤▪️▫️]\s*/g;
 const SOFT_HYPHEN = /\u00AD/g;
 const ZERO_WIDTH_CHARS = /[\u200B-\u200D\uFEFF]/g;
 const REPLACEMENT_CHAR = /\uFFFD/g;

@@ -15,6 +15,7 @@ const processJDText = (rawText) => {
     return {
         ...structured,
         characterCount: normalizedText.length,
+        rawText,
     };
 };
 

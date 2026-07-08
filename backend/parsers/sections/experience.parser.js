@@ -86,7 +86,7 @@ const parseExperience = (text) => {
 
         for (const line of nonRoleNonBullet) {
             const trimmed = line.trim();
-            if (trimmed && company && trimmed !== company && trimmed.length > 10) {
+            if (trimmed && trimmed.length > 10) {
                 description.push(trimmed);
             }
         }
