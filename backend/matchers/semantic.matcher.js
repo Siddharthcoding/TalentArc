@@ -60,12 +60,22 @@ const tfidfSimilarity = (textA, textB) => {
     return cosineSimilarity(vecA, vecB);
 };
 
+const embeddingCache = new Map();
+
 const getEmbedding = async (hf, text) => {
+    if (embeddingCache.has(text)) {
+        return embeddingCache.get(text);
+    }
     const result = await hf.featureExtraction({
         model: "sentence-transformers/all-MiniLM-L6-v2",
         inputs: text,
+        provider: "hf-inference",
+    }, {
+        retry_on_error: false,
     });
-    return Array.isArray(result[0]) ? result[0] : result;
+    const embedding = Array.isArray(result[0]) ? result[0] : result;
+    embeddingCache.set(text, embedding);
+    return embedding;
 };
 
 const embeddingSimilarity = async (hf, textA, textB) => {

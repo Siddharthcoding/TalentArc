@@ -226,6 +226,9 @@ const generateJDReportLLM = async (jd, resume, matching, aggregated) => {
             model: "mistralai/Mistral-7B-Instruct-v0.3",
             inputs: prompt,
             parameters: { max_new_tokens: 300, temperature: 0.3 },
+            provider: "hf-inference",
+        }, {
+            retry_on_error: false,
         });
 
         const raw = response.generated_text;

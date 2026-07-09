@@ -6,6 +6,17 @@ const apiClient = axios.create({
   headers: { Accept: 'application/json' },
 });
 
+apiClient.interceptors.request.use((config) => {
+  try {
+    const token = localStorage.getItem('talentarc-token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  } catch {
+  }
+  return config;
+});
+
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -22,6 +33,10 @@ apiClient.interceptors.response.use(
       }
       if (status === 415) {
         return Promise.reject({ title: 'Unsupported Format', message: 'Please upload a PDF or DOCX file.' });
+      }
+      if (status === 401) {
+        try { localStorage.removeItem('talentarc-token'); } catch {}
+        return Promise.reject({ title: 'Session Expired', message: 'Please sign in again.' });
       }
       return Promise.reject({ title: 'Server Error', message: 'Something went wrong. Please try again.' });
     }
@@ -51,6 +66,37 @@ export async function matchResumeToJD(file, jdText, jdFile) {
   const { data } = await apiClient.post('/jd/match', formData);
   if (!data.success) throw { title: 'Matching Failed', message: data.error || 'Unknown error' };
   return data.data;
+}
+
+export async function getMe() {
+  const { data } = await apiClient.get('/auth/me');
+  return data;
+}
+
+export async function logout() {
+  const { data } = await apiClient.post('/auth/logout');
+  return data;
+}
+
+export async function getReports(type) {
+  const params = type ? { type } : {};
+  const { data } = await apiClient.get('/reports', { params });
+  return data;
+}
+
+export async function getReport(id) {
+  const { data } = await apiClient.get(`/reports/${id}`);
+  return data;
+}
+
+export async function claimReport(tempUuid) {
+  const { data } = await apiClient.post('/reports/claim', { tempUuid });
+  return data;
+}
+
+export async function deleteReport(id) {
+  const { data } = await apiClient.delete(`/reports/${id}`);
+  return data;
 }
 
 export default apiClient;

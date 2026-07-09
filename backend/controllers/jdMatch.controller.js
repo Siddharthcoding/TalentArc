@@ -5,6 +5,7 @@ import { runJDMatching, runAsyncMatching } from "../services/jdMatching.service.
 import aggregateMatchScores from "../services/jdAggregator.service.js";
 import { generateJDReportLLM } from "../services/jdReport.service.js";
 import enhanceJD from "../services/jdEnhancer.service.js";
+import * as reportDb from "../services/reportDb.service.js";
 
 const matchJD = async (req, res) => {
     try {
@@ -62,25 +63,49 @@ const matchJD = async (req, res) => {
             aggregated
         );
 
+        const responseData = {
+            resume: {
+                fileName: resumeResult.fileName,
+                structured: resumeResult.structured,
+            },
+            jd: {
+                company: jdEnhanced.company,
+                requiredSkills: jdEnhanced.requiredSkills,
+                preferredSkills: jdEnhanced.preferredSkills,
+                responsibilities: jdEnhanced.responsibilities,
+                experience: jdEnhanced.experience,
+                education: jdEnhanced.education,
+            },
+            matching: allResults,
+            aggregated,
+            report,
+        };
+
+        if (req.user) {
+            await reportDb.saveReport({
+                userId: req.user.id,
+                reportType: "jd_match",
+                inputData: {
+                    resumeFileName: resumeResult.fileName,
+                    company: jdEnhanced.company,
+                },
+                resultPayload: responseData,
+            });
+        } else {
+            const saved = await reportDb.saveReport({
+                reportType: "jd_match",
+                inputData: {
+                    resumeFileName: resumeResult.fileName,
+                    company: jdEnhanced.company,
+                },
+                resultPayload: responseData,
+            });
+            responseData.tempUuid = saved.temp_uuid;
+        }
+
         return res.status(200).json({
             success: true,
-            data: {
-                resume: {
-                    fileName: resumeResult.fileName,
-                    structured: resumeResult.structured,
-                },
-                jd: {
-                    company: jdEnhanced.company,
-                    requiredSkills: jdEnhanced.requiredSkills,
-                    preferredSkills: jdEnhanced.preferredSkills,
-                    responsibilities: jdEnhanced.responsibilities,
-                    experience: jdEnhanced.experience,
-                    education: jdEnhanced.education,
-                },
-                matching: allResults,
-                aggregated,
-                report,
-            },
+            data: responseData,
         });
     } catch (error) {
         return res.status(400).json({
