@@ -1,6 +1,6 @@
 import { HfInference } from "@huggingface/inference";
 
-const DEFAULT_MODEL = "meta-llama/Llama-3.1-8B-Instruct:scaleway";
+const DEFAULT_MODEL = "deepseek-ai/DeepSeek-V4-Flash-0731:fireworks-ai";
 const TIMEOUT_MS = 30000;
 const MAX_TOKENS = 800;
 const TEMPERATURE = 0.3;

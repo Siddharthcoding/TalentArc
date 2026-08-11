@@ -55,6 +55,18 @@ export async function analyzeResume(file) {
   return data.data;
 }
 
+/**
+ * Lightweight resume parse for assessment creation — only extracts text + skills.
+ * Uses /resume/upload (no LLM call) so it is fast and reliable.
+ */
+export async function parseResumeForAssessment(file) {
+  const formData = new FormData();
+  formData.append('resume', file);
+  const { data } = await apiClient.post('/resume/upload', formData);
+  if (!data.success) throw new Error(data.error || 'Could not parse resume');
+  return data.data; // { fileName, fileType, normalizedText, structured, rawLength, ... }
+}
+
 export async function matchResumeToJD(file, jdText, jdFile) {
   const formData = new FormData();
   formData.append('resume', file);
@@ -96,6 +108,36 @@ export async function claimReport(tempUuid) {
 
 export async function deleteReport(id) {
   const { data } = await apiClient.delete(`/reports/${id}`);
+  return data;
+}
+
+export async function createAssessment(params) {
+  const { data } = await apiClient.post('/assessments', params);
+  return data;
+}
+
+export async function submitAssessment(id, answers) {
+  const { data } = await apiClient.post(`/assessments/${id}/submit`, { answers });
+  return data;
+}
+
+export async function getAssessment(id) {
+  const { data } = await apiClient.get(`/assessments/${id}`);
+  return data;
+}
+
+export async function getUserAssessments() {
+  const { data } = await apiClient.get('/assessments');
+  return data;
+}
+
+export async function updateFullscreenViolations(id) {
+  const { data } = await apiClient.post(`/assessments/${id}/violations`);
+  return data;
+}
+
+export async function deleteAssessment(id) {
+  const { data } = await apiClient.delete(`/assessments/${id}`);
   return data;
 }
 

@@ -47,7 +47,7 @@ const enhanceJD = async (rawText, jdResult) => {
         const { messages, ...params } = buildEnhancePrompt(rawText, jdResult);
 
         const response = await hf.chatCompletion({
-            model: process.env.HF_MODEL || "meta-llama/Llama-3.1-8B-Instruct:scaleway",
+            model: process.env.HF_MODEL || "deepseek-ai/DeepSeek-V4-Flash-0731:fireworks-ai",
             ...params,
             messages,
         });

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileText, Briefcase, Loader2, AlertCircle } from 'lucide-react';
-import { getReports, deleteReport } from '@/services/api';
+import { FileText, Briefcase, Award, Loader2, AlertCircle } from 'lucide-react';
+import { getReports, deleteReport, getUserAssessments, deleteAssessment } from '@/services/api';
 import ReportCard from '@/components/reports/ReportCard';
 import ReportsEmpty from '@/components/reports/ReportsEmpty';
 import { cn } from '@/utils/cn';
@@ -10,6 +10,7 @@ const FILTERS = [
   { key: null, label: 'All', icon: null },
   { key: 'ats', label: 'ATS Score', icon: FileText },
   { key: 'jd_match', label: 'JD Match', icon: Briefcase },
+  { key: 'assessment', label: 'Mock Assessments', icon: Award },
 ];
 
 export default function Reports() {
@@ -22,8 +23,35 @@ export default function Reports() {
     setLoading(true);
     setError(null);
     try {
-      const res = await getReports(activeFilter);
-      setReports(res.data || []);
+      if (activeFilter === 'assessment') {
+        const res = await getUserAssessments();
+        const mapped = (res.data || []).map((a) => ({
+          id: a.id,
+          reportType: 'assessment',
+          inputData: { topic: a.topic, score: a.score, maxScore: a.maxScore, status: a.status, inputType: a.inputType },
+          createdAt: a.createdAt,
+        }));
+        setReports(mapped);
+      } else if (activeFilter === null) {
+        const [repRes, assRes] = await Promise.all([
+          getReports(null),
+          getUserAssessments(),
+        ]);
+        const standardReports = repRes.data || [];
+        const mappedAssessments = (assRes.data || []).map((a) => ({
+          id: a.id,
+          reportType: 'assessment',
+          inputData: { topic: a.topic, score: a.score, maxScore: a.maxScore, status: a.status, inputType: a.inputType },
+          createdAt: a.createdAt,
+        }));
+        const combined = [...standardReports, ...mappedAssessments].sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        );
+        setReports(combined);
+      } else {
+        const res = await getReports(activeFilter);
+        setReports(res.data || []);
+      }
     } catch (err) {
       setError(err?.message || 'Failed to load reports');
     } finally {
@@ -36,12 +64,18 @@ export default function Reports() {
   }, [fetchReports]);
 
   const handleDelete = useCallback(async (id) => {
+    const reportToDelete = reports.find((r) => r.id === id);
+    if (!reportToDelete) return;
     try {
-      await deleteReport(id);
+      if (reportToDelete.reportType === 'assessment') {
+        await deleteAssessment(id);
+      } else {
+        await deleteReport(id);
+      }
       setReports((prev) => prev.filter((r) => r.id !== id));
     } catch {
     }
-  }, []);
+  }, [reports]);
 
   return (
     <section className="relative min-h-screen pt-24 pb-16 overflow-hidden">

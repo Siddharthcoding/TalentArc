@@ -9,6 +9,9 @@ import PricingPage from '@/pages/PricingPage';
 import JdMatcher from '@/pages/JdMatcher';
 import Reports from '@/pages/Reports';
 import ReportDetail from '@/pages/ReportDetail';
+import AssessmentLanding from '@/pages/AssessmentLanding';
+import AssessmentSession from '@/pages/AssessmentSession';
+import AssessmentReport from '@/pages/AssessmentReport';
 import { useAuth } from '@/context/AuthContext';
 import { claimReport } from '@/services/api';
 
@@ -62,12 +65,15 @@ export default function App() {
   return (
     <Routes>
       <Route path="/auth/callback" element={<AuthCallback />} />
+      <Route path="/assessment/:id" element={<AssessmentSession />} />
       <Route element={<Layout />}>
         <Route path="/" element={<Home />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/jd-matcher" element={<JdMatcher />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/reports/:id" element={<ReportDetail />} />
+        <Route path="/assessment" element={<AssessmentLanding />} />
+        <Route path="/assessment/:id/report" element={<AssessmentReport />} />
         <Route path="/features" element={<FeaturesPage />} />
         <Route path="/pricing" element={<PricingPage />} />
       </Route>

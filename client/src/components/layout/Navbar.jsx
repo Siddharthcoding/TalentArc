@@ -10,6 +10,7 @@ import { cn } from '@/utils/cn';
 const guestLinks = [
   { href: '/', label: 'ATS Checker' },
   { href: '/jd-matcher', label: 'JD Matcher' },
+  { href: '/assessment', label: 'Mock Assessment' },
   { href: '/pricing', label: 'Pricing' },
   { href: '/features', label: 'Docs' },
 ];
@@ -17,6 +18,7 @@ const guestLinks = [
 const authLinks = [
   { href: '/', label: 'ATS Checker' },
   { href: '/jd-matcher', label: 'JD Matcher' },
+  { href: '/assessment', label: 'Mock Assessment' },
   { href: '/reports', label: 'My Reports' },
   { href: '/features', label: 'Docs' },
 ];

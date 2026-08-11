@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { FileText, Briefcase, Trash2, ChevronRight } from 'lucide-react';
+import { FileText, Briefcase, Award, Trash2, ChevronRight } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
 function formatDate(dateStr) {
@@ -18,9 +18,16 @@ function getScore(report) {
   try {
     const payload = report?.resultPayload || report?.inputData;
     if (report.reportType === 'ats') {
-      return payload?.scoring?.overall?.toFixed(0);
+      return payload?.scoring?.overall;
     }
-    return payload?.aggregated?.overall?.toFixed(0);
+    if (report.reportType === 'assessment') {
+      if (payload?.status === 'terminated') return 0;
+      if (payload?.maxScore > 0) {
+        return (payload.score / payload.maxScore) * 100;
+      }
+      return null;
+    }
+    return payload?.aggregated?.overall;
   } catch {
     return null;
   }
@@ -30,6 +37,11 @@ function getTitle(report) {
   if (report.reportType === 'jd_match') {
     const company = report?.resultPayload?.jd?.company || report?.inputData?.company;
     return company ? `JD Match — ${company}` : 'JD Match Report';
+  }
+  if (report.reportType === 'assessment') {
+    const topic = report?.inputData?.topic || 'Tech Skills';
+    const isTerminated = report?.inputData?.status === 'terminated';
+    return `Assessment — ${topic}${isTerminated ? ' (Terminated)' : ''}`;
   }
   const fileName = report?.resultPayload?.fileName || report?.inputData?.fileName;
   return fileName ? `ATS Score — ${fileName}` : 'ATS Score Report';
@@ -42,7 +54,7 @@ export default function ReportCard({ report, onDelete, index = 0 }) {
 
   return (
     <motion.a
-      href={`/reports/${report.id}`}
+      href={report.reportType === 'assessment' ? `/assessment/${report.id}/report` : `/reports/${report.id}`}
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay: index * 0.05 }}
@@ -57,10 +69,14 @@ export default function ReportCard({ report, onDelete, index = 0 }) {
             'mt-0.5 w-10 h-10 rounded-xl flex items-center justify-center shrink-0',
             report.reportType === 'jd_match'
               ? 'bg-amber-50 dark:bg-amber-950/40'
-              : 'bg-indigo-50 dark:bg-indigo-950/40'
+              : report.reportType === 'assessment'
+                ? 'bg-emerald-50 dark:bg-emerald-950/40'
+                : 'bg-indigo-50 dark:bg-indigo-950/40'
           )}>
             {report.reportType === 'jd_match' ? (
               <Briefcase className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+            ) : report.reportType === 'assessment' ? (
+              <Award className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
             ) : (
               <FileText className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
             )}
@@ -78,7 +94,12 @@ export default function ReportCard({ report, onDelete, index = 0 }) {
         <div className="flex items-center gap-2 shrink-0">
           {score !== null && (
             <div className={cn('px-3 py-1.5 rounded-lg text-sm font-bold tabular-nums', scoreColor, scoreBg)}>
-              {score}
+              {report.reportType === 'assessment'
+                ? report?.inputData?.status === 'terminated'
+                  ? 'Terminated'
+                  : `${report?.inputData?.score || 0}/${report?.inputData?.maxScore || 0}`
+                : score.toFixed(0)
+              }
             </div>
           )}
           <div className="opacity-0 group-hover:opacity-100 transition-opacity">
