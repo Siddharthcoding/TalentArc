@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { FileText, Briefcase, Award, Trash2, ChevronRight } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
@@ -17,17 +18,19 @@ function formatDate(dateStr) {
 function getScore(report) {
   try {
     const payload = report?.resultPayload || report?.inputData;
+    let score = null;
     if (report.reportType === 'ats') {
-      return payload?.scoring?.overall;
-    }
-    if (report.reportType === 'assessment') {
+      score = payload?.scoring?.overall;
+    } else if (report.reportType === 'assessment') {
       if (payload?.status === 'terminated') return 0;
       if (payload?.maxScore > 0) {
-        return (payload.score / payload.maxScore) * 100;
+        score = (payload.score / payload.maxScore) * 100;
       }
-      return null;
+    } else {
+      score = payload?.aggregated?.overall;
     }
-    return payload?.aggregated?.overall;
+    const numericScore = Number(score);
+    return Number.isFinite(numericScore) ? numericScore : null;
   } catch {
     return null;
   }
@@ -49,12 +52,13 @@ function getTitle(report) {
 
 export default function ReportCard({ report, onDelete, index = 0 }) {
   const score = getScore(report);
-  const scoreColor = score >= 80 ? 'text-emerald-500' : score >= 60 ? 'text-amber-500' : 'text-red-400';
-  const scoreBg = score >= 80 ? 'bg-emerald-50 dark:bg-emerald-950/30' : score >= 60 ? 'bg-amber-50 dark:bg-amber-950/30' : 'bg-red-50 dark:bg-red-950/30';
+  const hasScore = score !== null;
+  const scoreColor = hasScore && score >= 80 ? 'text-emerald-500' : hasScore && score >= 60 ? 'text-amber-500' : 'text-red-400';
+  const scoreBg = hasScore && score >= 80 ? 'bg-emerald-50 dark:bg-emerald-950/30' : hasScore && score >= 60 ? 'bg-amber-50 dark:bg-amber-950/30' : 'bg-red-50 dark:bg-red-950/30';
 
   return (
-    <motion.a
-      href={report.reportType === 'assessment' ? `/assessment/${report.id}/report` : `/reports/${report.id}`}
+    <MotionLink
+      to={report.reportType === 'assessment' ? `/assessment/${report.id}/report` : `/reports/${report.id}`}
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay: index * 0.05 }}
@@ -92,7 +96,7 @@ export default function ReportCard({ report, onDelete, index = 0 }) {
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          {score !== null && (
+          {hasScore && (
             <div className={cn('px-3 py-1.5 rounded-lg text-sm font-bold tabular-nums', scoreColor, scoreBg)}>
               {report.reportType === 'assessment'
                 ? report?.inputData?.status === 'terminated'
@@ -123,6 +127,7 @@ export default function ReportCard({ report, onDelete, index = 0 }) {
           <Trash2 className="w-3.5 h-3.5" />
         </button>
       </div>
-    </motion.a>
+    </MotionLink>
   );
 }
+const MotionLink = motion(Link);

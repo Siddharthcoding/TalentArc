@@ -20,7 +20,7 @@ export default function Layout() {
         <main className="flex-1">
           <AnimatePresence mode="wait">
             <motion.div
-              key={location.pathname}
+              key={`${location.pathname}${location.search}${location.hash}`}
               variants={pageVariants}
               initial="initial"
               animate="animate"

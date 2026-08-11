@@ -1,2 +1,7 @@
+
+> backend@1.0.0 start
+> node app.js
+
+Database tables checked/created
 Database migrations complete
 Server running on port 3000

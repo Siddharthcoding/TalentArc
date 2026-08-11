@@ -44,6 +44,29 @@ function clearToken() {
   }
 }
 
+function userFromToken(token) {
+  try {
+    const [, payload] = token.split('.');
+    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const json = decodeURIComponent(
+      atob(normalized)
+        .split('')
+        .map((char) => `%${(`00${char.charCodeAt(0).toString(16)}`).slice(-2)}`)
+        .join('')
+    );
+    const decoded = JSON.parse(json);
+    return {
+      id: decoded.id,
+      email: decoded.email,
+      displayName: decoded.displayName,
+      avatarUrl: decoded.avatarUrl,
+      isAdmin: !!decoded.isAdmin,
+    };
+  } catch {
+    return null;
+  }
+}
+
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
@@ -67,11 +90,12 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(() => {
     try {
-      sessionStorage.setItem('authRedirect', window.location.pathname);
+      sessionStorage.setItem('authRedirect', `${window.location.pathname}${window.location.search}${window.location.hash}`);
     } catch {
     }
     const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-    window.location.href = `${backendUrl}/api/auth/google`;
+    const frontendUrl = encodeURIComponent(window.location.origin);
+    window.location.href = `${backendUrl}/api/auth/google?frontendUrl=${frontendUrl}`;
   }, []);
 
   const logout = useCallback(async () => {
@@ -91,9 +115,16 @@ export function AuthProvider({ children }) {
 
   const setToken = useCallback((token) => {
     storeToken(token);
+    const optimisticUser = userFromToken(token);
+    if (optimisticUser?.id) {
+      dispatch({ type: 'SET_USER', payload: optimisticUser });
+    }
     return getMe().then((user) => {
       dispatch({ type: 'SET_USER', payload: user });
       return user;
+    }).catch((err) => {
+      if (optimisticUser?.id) return optimisticUser;
+      throw err;
     });
   }, []);
 

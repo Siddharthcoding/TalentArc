@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ArrowRight, Sparkles, LogOut, FileText } from 'lucide-react';
+import { Menu, X, ArrowRight, Sparkles, LogOut, FileText, Building2 } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import AnimatedButton from '@/components/ui/AnimatedButton';
 import { useAuth } from '@/context/AuthContext';
@@ -11,6 +11,7 @@ const guestLinks = [
   { href: '/', label: 'ATS Checker' },
   { href: '/jd-matcher', label: 'JD Matcher' },
   { href: '/assessment', label: 'Mock Assessment' },
+  { href: '/company-bank', label: 'Company Bank' },
   { href: '/pricing', label: 'Pricing' },
   { href: '/features', label: 'Docs' },
 ];
@@ -19,6 +20,7 @@ const authLinks = [
   { href: '/', label: 'ATS Checker' },
   { href: '/jd-matcher', label: 'JD Matcher' },
   { href: '/assessment', label: 'Mock Assessment' },
+  { href: '/company-bank', label: 'Company Bank' },
   { href: '/reports', label: 'My Reports' },
   { href: '/features', label: 'Docs' },
 ];
@@ -49,7 +51,7 @@ export default function Navbar() {
   const [avatarOpen, setAvatarOpen] = useState(false);
   const avatarRef = useRef(null);
   const location = useLocation();
-  const { isAuthenticated, user, login, logout } = useAuth();
+  const { isAuthenticated, loading, user, login, logout } = useAuth();
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -114,7 +116,9 @@ export default function Navbar() {
         <div className="flex items-center gap-3">
           <ThemeToggle />
 
-          {isAuthenticated && user ? (
+          {loading ? (
+            <div className="w-9 h-9 rounded-full bg-zinc-100 dark:bg-zinc-800 animate-pulse" />
+          ) : isAuthenticated && user ? (
             <div className="relative" ref={avatarRef}>
               <button
                 onClick={() => setAvatarOpen(!avatarOpen)}
@@ -152,6 +156,16 @@ export default function Navbar() {
                       <FileText className="w-4 h-4" />
                       My Reports
                     </Link>
+                    {user.isAdmin && (
+                      <Link
+                        to="/admin/company-bank"
+                        onClick={() => setAvatarOpen(false)}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                      >
+                        <Building2 className="w-4 h-4" />
+                        Company Bank Admin
+                      </Link>
+                    )}
                     <button
                       onClick={() => { setAvatarOpen(false); logout(); }}
                       className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm text-zinc-600 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
@@ -219,7 +233,12 @@ export default function Navbar() {
                   {link.label}
                 </Link>
               ))}
-              {isAuthenticated && user && (
+              {loading && (
+                <div className="px-4 py-3">
+                  <div className="h-9 rounded-xl bg-zinc-100 dark:bg-zinc-800 animate-pulse" />
+                </div>
+              )}
+              {!loading && isAuthenticated && user && (
                 <div className="pt-2 pb-2 border-t border-zinc-100 dark:border-zinc-800">
                   <div className="flex items-center gap-3 px-4 py-2">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white text-xs font-semibold overflow-hidden">
@@ -240,9 +259,18 @@ export default function Navbar() {
                     <LogOut className="w-4 h-4" />
                     Sign Out
                   </button>
+                  {user.isAdmin && (
+                    <Link
+                      to="/admin/company-bank"
+                      className="flex items-center gap-2 w-full px-4 py-3 rounded-xl text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                    >
+                      <Building2 className="w-4 h-4" />
+                      Company Bank Admin
+                    </Link>
+                  )}
                 </div>
               )}
-              {!isAuthenticated && (
+              {!loading && !isAuthenticated && (
                 <>
                   <button
                     onClick={() => { setMobileOpen(false); login(); }}

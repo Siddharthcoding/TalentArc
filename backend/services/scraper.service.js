@@ -10,57 +10,100 @@ export function runScraper(topic, limit = 5) {
     const scriptPath = path.join(__dirname, "..", "scripts", "scrape_questions.py");
     console.log(`[Scraper] Invoking python scraper at ${scriptPath} for topic: "${topic}"`);
 
-    // Standard python spawning
-    const py = spawn("python", [scriptPath, "--topic", topic, "--limit", String(limit)]);
+    const candidates = process.env.PYTHON_BIN
+      ? [{ command: process.env.PYTHON_BIN, prefixArgs: [] }]
+      : process.platform === "win32"
+        ? [
+            { command: "python", prefixArgs: [] },
+            { command: "py", prefixArgs: ["-3"] },
+            { command: "python3", prefixArgs: [] },
+          ]
+        : [
+            { command: "python3", prefixArgs: [] },
+            { command: "python", prefixArgs: [] },
+          ];
+
+    let candidateIndex = 0;
+    let settled = false;
+    let timeoutId = null;
+    let py = null;
 
     const SCRAPER_TIMEOUT_MS = 12000;
-    const timeoutId = setTimeout(() => {
-      console.warn(`[Scraper] Python scraper timed out after ${SCRAPER_TIMEOUT_MS}ms. Terminating process...`);
-      try {
-        py.kill("SIGKILL");
-      } catch (err) {
-        console.error("[Scraper] Error killing python process:", err);
-      }
-      resolve([]);
-    }, SCRAPER_TIMEOUT_MS);
 
-    let stdoutData = "";
-    let stderrData = "";
+    const finish = (questions) => {
+      if (settled) return;
+      settled = true;
+      if (timeoutId) clearTimeout(timeoutId);
+      resolve(questions);
+    };
 
-    py.stdout.on("data", (data) => {
-      stdoutData += data.toString();
-    });
-
-    py.stderr.on("data", (data) => {
-      stderrData += data.toString();
-    });
-
-    py.on("close", (code) => {
-      clearTimeout(timeoutId);
-      if (stderrData) {
-        console.warn(`[Scraper] Python stderr: ${stderrData.trim()}`);
+    const tryNext = () => {
+      if (candidateIndex >= candidates.length) {
+        console.error("[Scraper] No working Python command found for web scraping.");
+        return finish([]);
       }
 
-      if (code !== 0) {
-        console.error(`[Scraper] Python process exited with code ${code}`);
-        // We resolve with empty array rather than rejecting so the calling service can fallback to LLM
-        return resolve([]);
-      }
+      const candidate = candidates[candidateIndex++];
+      const args = [...candidate.prefixArgs, scriptPath, "--topic", topic, "--limit", String(limit)];
+      let stdoutData = "";
+      let stderrData = "";
 
       try {
-        const questions = JSON.parse(stdoutData.trim() || "[]");
-        console.log(`[Scraper] Successfully scraped ${questions.length} questions`);
-        resolve(questions);
+        py = spawn(candidate.command, args);
       } catch (err) {
-        console.error("[Scraper] Failed to parse JSON output from python script:", err);
-        resolve([]);
+        console.warn(`[Scraper] Could not launch ${candidate.command}: ${err.message}`);
+        return tryNext();
       }
-    });
 
-    py.on("error", (err) => {
-      clearTimeout(timeoutId);
-      console.error("[Scraper] Failed to start python process:", err);
-      resolve([]);
-    });
+      timeoutId = setTimeout(() => {
+        console.warn(`[Scraper] Python scraper timed out after ${SCRAPER_TIMEOUT_MS}ms. Terminating process...`);
+        try {
+          py.kill("SIGKILL");
+        } catch {}
+        finish([]);
+      }, SCRAPER_TIMEOUT_MS);
+
+      py.stdout.on("data", (data) => {
+        stdoutData += data.toString();
+      });
+
+      py.stderr.on("data", (data) => {
+        stderrData += data.toString();
+      });
+
+      py.on("close", (code) => {
+        if (settled) return;
+        if (timeoutId) clearTimeout(timeoutId);
+        timeoutId = null;
+
+        if (stderrData) {
+          console.warn(`[Scraper] ${candidate.command} stderr: ${stderrData.trim()}`);
+        }
+
+        if (code !== 0) {
+          console.warn(`[Scraper] ${candidate.command} exited with code ${code}; trying next Python command.`);
+          return tryNext();
+        }
+
+        try {
+          const questions = JSON.parse(stdoutData.trim() || "[]");
+          console.log(`[Scraper] Successfully scraped ${questions.length} questions`);
+          finish(questions);
+        } catch (err) {
+          console.error("[Scraper] Failed to parse JSON output from python script:", err);
+          finish([]);
+        }
+      });
+
+      py.on("error", (err) => {
+        if (settled) return;
+        if (timeoutId) clearTimeout(timeoutId);
+        timeoutId = null;
+        console.warn(`[Scraper] Failed to start ${candidate.command}: ${err.message}`);
+        tryNext();
+      });
+    };
+
+    tryNext();
   });
 }

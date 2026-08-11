@@ -35,7 +35,7 @@ export async function claimReport(tempUuid, userId) {
 }
 
 export async function getUserReports(userId, reportType) {
-  let query = `SELECT id, report_type, input_data, created_at
+  let query = `SELECT id, report_type, input_data, result_payload, created_at
                FROM reports WHERE user_id = $1`;
   const params = [userId];
 
@@ -52,6 +52,7 @@ export async function getUserReports(userId, reportType) {
     id: r.id,
     reportType: r.report_type,
     inputData: r.input_data,
+    resultPayload: r.result_payload,
     createdAt: r.created_at,
   }));
 }

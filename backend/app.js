@@ -7,6 +7,7 @@ import jdMatchRoutes from "./routes/jdMatch.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import reportRoutes from "./routes/reports.routes.js";
 import assessmentRoutes from "./routes/assessment.routes.js";
+import companyBankRoutes from "./routes/companyBank.routes.js";
 import migrate from "./db/migrate.js";
 
 const app = express();
@@ -24,6 +25,7 @@ app.use("/api/jd", jdMatchRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/assessments", assessmentRoutes);
+app.use("/api/company-bank", companyBankRoutes);
 
 migrate().then(() => {
   app.listen(PORT, () => {

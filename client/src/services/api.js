@@ -36,9 +36,15 @@ apiClient.interceptors.response.use(
       }
       if (status === 401) {
         try { localStorage.removeItem('talentarc-token'); } catch {}
-        return Promise.reject({ title: 'Session Expired', message: 'Please sign in again.' });
+        return Promise.reject({ title: 'Session Expired', message: data?.error || 'Please sign in again.' });
       }
-      return Promise.reject({ title: 'Server Error', message: 'Something went wrong. Please try again.' });
+      if (status === 403) {
+        return Promise.reject({ title: 'Access Denied', message: data?.error || 'You do not have access to this action.' });
+      }
+      if (status === 404) {
+        return Promise.reject({ title: 'Not Found', message: data?.error || 'The requested item was not found.' });
+      }
+      return Promise.reject({ title: 'Server Error', message: data?.error || 'Something went wrong. Please try again.' });
     }
     if (error.message?.includes('Network Error')) {
       return Promise.reject({ title: 'Network Error', message: 'Could not connect to the server. Check your connection.' });
@@ -138,6 +144,56 @@ export async function updateFullscreenViolations(id) {
 
 export async function deleteAssessment(id) {
   const { data } = await apiClient.delete(`/assessments/${id}`);
+  return data;
+}
+
+// ─── Company Question Bank ────────────────────────────────────────────────────
+
+export async function getCompanies() {
+  const { data } = await apiClient.get('/company-bank/companies');
+  return data;
+}
+
+export async function getCompany(id) {
+  const { data } = await apiClient.get(`/company-bank/companies/${id}`);
+  return data;
+}
+
+export async function createCompany(payload) {
+  const { data } = await apiClient.post('/company-bank/companies', payload);
+  return data;
+}
+
+export async function updateCompany(id, payload) {
+  const { data } = await apiClient.put(`/company-bank/companies/${id}`, payload);
+  return data;
+}
+
+export async function deleteCompany(id) {
+  const { data } = await apiClient.delete(`/company-bank/companies/${id}`);
+  return data;
+}
+
+export async function getCompanyQuestions(companyId, params = {}) {
+  const query = new URLSearchParams(params).toString();
+  const { data } = await apiClient.get(
+    `/company-bank/companies/${companyId}/questions${query ? `?${query}` : ''}`
+  );
+  return data;
+}
+
+export async function addCompanyQuestion(companyId, payload) {
+  const { data } = await apiClient.post(`/company-bank/companies/${companyId}/questions`, payload);
+  return data;
+}
+
+export async function updateCompanyQuestion(qid, payload) {
+  const { data } = await apiClient.put(`/company-bank/questions/${qid}`, payload);
+  return data;
+}
+
+export async function deleteCompanyQuestion(qid) {
+  const { data } = await apiClient.delete(`/company-bank/questions/${qid}`);
   return data;
 }
 

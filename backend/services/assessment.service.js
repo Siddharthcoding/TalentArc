@@ -1,6 +1,7 @@
 import { HfInference } from "@huggingface/inference";
 import pool from "../db/pool.js";
 import { runScraper } from "./scraper.service.js";
+import { TECH_SKILLS } from "../data/techSkills.js";
 
 const DEFAULT_MODEL = "deepseek-ai/DeepSeek-V4-Flash-0731:fireworks-ai";
 const FALLBACK_MODEL = "meta-llama/Llama-3.1-8B-Instruct:scaleway";
@@ -9,6 +10,127 @@ const getConfig = () => ({
   token: process.env.HF_TOKEN || "",
   model: process.env.HF_MODEL || DEFAULT_MODEL,
 });
+
+const ALL_TECH_SKILLS = Object.values(TECH_SKILLS).flat();
+const TOPIC_ALIASES = {
+  dbms: "Database Management Systems",
+  cn: "Computer Networks",
+  os: "Operating Systems",
+  oops: "Object Oriented Programming",
+  dsa: "Data Structures and Algorithms",
+};
+
+function titleCase(value) {
+  return value
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function normalizeTopic(value) {
+  return String(value || "")
+    .replace(/[()[\]{}]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function expandTopic(topic) {
+  const normalized = normalizeTopic(topic);
+  return TOPIC_ALIASES[normalized.toLowerCase()] || normalized;
+}
+
+function uniqueTopics(topics, limit = 8) {
+  const seen = new Set();
+  const result = [];
+  for (const raw of topics) {
+    const topic = normalizeTopic(raw);
+    const key = topic.toLowerCase();
+    if (!topic || seen.has(key)) continue;
+    seen.add(key);
+    const expanded = expandTopic(topic);
+    result.push(expanded.length <= 60 ? titleCase(expanded) : expanded.slice(0, 60).trim());
+    if (result.length >= limit) break;
+  }
+  return result;
+}
+
+function extractCommaSeparatedTopics(inputValue) {
+  return uniqueTopics(String(inputValue || "").split(/[,;\n|/]+/));
+}
+
+function extractTechTopicsFromText(inputValue) {
+  const text = String(inputValue || "").toLowerCase();
+  const matched = [];
+  for (const skill of ALL_TECH_SKILLS) {
+    const escaped = skill.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const pattern = new RegExp(`(^|[^a-z0-9+#.])${escaped}([^a-z0-9+#.]|$)`, "i");
+    if (pattern.test(text)) matched.push(skill);
+  }
+  return uniqueTopics(matched);
+}
+
+function resolveAssessmentTopics(inputType, inputValue) {
+  if (inputType === "skill") {
+    return extractCommaSeparatedTopics(inputValue).length
+      ? extractCommaSeparatedTopics(inputValue)
+      : ["General Tech"];
+  }
+
+  if (inputType === "job_role") {
+    const topics = extractCommaSeparatedTopics(inputValue);
+    return topics.length ? topics : ["Software Engineer"];
+  }
+
+  if (inputType === "job_description") {
+    const techTopics = extractTechTopicsFromText(inputValue);
+    if (techTopics.length) return techTopics;
+    const firstLines = String(inputValue || "").split("\n").slice(0, 2).join(" ");
+    const fallback = firstLines.length > 80 ? "Job Match Assessment" : firstLines;
+    return [normalizeTopic(fallback) || "Job Match Assessment"];
+  }
+
+  if (inputType === "resume") {
+    const topics = extractCommaSeparatedTopics(inputValue);
+    return topics.length ? topics : ["Software Development"];
+  }
+
+  return ["Technical Skills"];
+}
+
+function allocateCounts(total, topics) {
+  const safeTopics = topics.length ? topics : ["Technical Skills"];
+  const base = Math.floor(total / safeTopics.length);
+  let remainder = total % safeTopics.length;
+  return safeTopics.map((topic) => ({
+    topic,
+    count: base + (remainder-- > 0 ? 1 : 0),
+  })).filter((entry) => entry.count > 0);
+}
+
+async function loadTopicFallbackQuestions(topic, limit) {
+  const aliases = uniqueTopics([topic, expandTopic(topic), ...Object.entries(TOPIC_ALIASES)
+    .filter(([, expanded]) => expanded.toLowerCase() === topic.toLowerCase())
+    .map(([alias]) => alias)]);
+  const { rows } = await pool.query(
+    `SELECT * FROM questions_store
+     WHERE LOWER(topic) = ANY($2::text[])
+        OR LOWER(topic) ILIKE $3
+        OR LOWER(question_text) ILIKE $3
+     ORDER BY RANDOM()
+     LIMIT $1`,
+    [limit, aliases.map((t) => t.toLowerCase()), `%${topic.toLowerCase()}%`]
+  );
+  return rows.map((r) => ({
+    id: r.id,
+    question_text: r.question_text,
+    options: r.options,
+    correct_option: r.correct_option,
+    explanation: r.explanation,
+    difficulty: r.difficulty,
+    topic: r.topic,
+  }));
+}
 
 /**
  * Clean up markdown blocks from LLM JSON responses
@@ -191,101 +313,73 @@ Respond with plain text only, no JSON, and no headers.
  * Create a new assessment
  */
 export async function createAssessment(userId, { inputType, inputValue, difficulty, questionCount, durationSeconds }) {
-  // 1. Infer topic
-  let topic = "Technical Skills";
-  if (inputType === "skill") {
-    topic = inputValue || "General Tech";
-  } else if (inputType === "job_role") {
-    topic = inputValue || "Software Engineer";
-  } else if (inputType === "job_description") {
-    // Attempt to extract key tech keywords or set generic title
-    const firstLines = (inputValue || "").split("\n")[0];
-    topic = firstLines.length > 50 ? "Job Match Assessment" : firstLines || "Job Match Assessment";
-  } else if (inputType === "resume") {
-    // inputValue is a comma-separated list of skills extracted from the resume
-    if (inputValue && inputValue.trim().length > 0) {
-      // Use first skill as primary topic, truncate if too long
-      const firstSkill = inputValue.split(",")[0].trim();
-      topic = firstSkill.length <= 60 ? firstSkill : inputValue.slice(0, 60);
-    } else {
-      topic = "Software Development";
-    }
-  }
-
   const count = parseInt(questionCount, 10) || 10;
   const timer = parseInt(durationSeconds, 10) || 600;
+  const topics = resolveAssessmentTopics(inputType, inputValue);
+  const topic = topics.length === 1 ? topics[0] : topics.join(", ");
+  const topicPlan = allocateCounts(count, topics);
 
-  console.log(`[Assessment] Creating assessment for topic: "${topic}" (${inputType}), difficulty: ${difficulty}, size: ${count}`);
+  console.log(`[Assessment] Creating assessment for topics: "${topic}" (${inputType}), difficulty: ${difficulty}, size: ${count}`);
 
-  // Determine how many questions should come from external sources (scraper + LLM)
   const EXTERNAL_RATIO = 0.7; // 70% external, 30% DB fallback
-  const externalTarget = Math.max(1, Math.round(count * EXTERNAL_RATIO));
-  const dbFallbackTarget = count - externalTarget;
-
   let questions = [];
 
-  // 1. Attempt to fetch from DB as fallback only if needed after external sources
-  // (keep this as last resort)
+  for (const plan of topicPlan) {
+    let topicQuestions = [];
+    const externalTarget = Math.max(1, Math.round(plan.count * EXTERNAL_RATIO));
 
-  // 2. Scrape from web
-  if (questions.length < externalTarget) {
-    const neededScrape = externalTarget - questions.length;
-    try {
-      const scraped = await runScraper(topic, neededScrape);
-      if (scraped && scraped.length > 0) {
-        scraped.forEach((q) => (q.difficulty = difficulty));
-        questions = [...questions, ...scraped];
-        console.log(`[Assessment] Added ${scraped.length} questions from web scraper`);
-      }
-    } catch (err) {
-      console.error("[Assessment] Error during scraping:", err);
-    }
-  }
-
-  // 3. Generate remaining needed via LLM
-  if (questions.length < externalTarget) {
-    const neededLLM = externalTarget - questions.length;
-    try {
-      const generated = await generateQuestionsViaLLM(topic, difficulty, neededLLM);
-      if (generated && generated.length > 0) {
-        questions = [...questions, ...generated];
-        console.log(`[Assessment] Added ${generated.length} questions generated via LLM`);
-        // Cache generated questions for future reuse
-        for (const q of generated) {
-          pool.query(
-            `INSERT INTO questions_store (topic, question_text, options, correct_option, explanation, difficulty)
-             VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING`,
-            [q.topic || topic, q.question_text, JSON.stringify(q.options), q.correct_option, q.explanation, q.difficulty]
-          ).catch((e) => console.error("[Assessment] Failed to cache generated question:", e));
+    if (topicQuestions.length < externalTarget) {
+      const neededScrape = externalTarget - topicQuestions.length;
+      try {
+        const scraped = await runScraper(plan.topic, neededScrape);
+        if (scraped && scraped.length > 0) {
+          scraped.forEach((q) => {
+            q.difficulty = difficulty;
+            q.topic = q.topic || plan.topic;
+          });
+          topicQuestions = [...topicQuestions, ...scraped];
+          console.log(`[Assessment] Added ${scraped.length} scraped questions for ${plan.topic}`);
         }
+      } catch (err) {
+        console.error(`[Assessment] Error during scraping for ${plan.topic}:`, err);
       }
-    } catch (err) {
-      console.error("[Assessment] Error during LLM generation:", err);
     }
-  }
 
-  // 4. Fallback to DB store for any remaining slots
-  if (questions.length < count) {
-    const neededDB = count - questions.length;
-    try {
-      const { rows } = await pool.query(
-        `SELECT * FROM questions_store ORDER BY RANDOM() LIMIT $1`,
-        [neededDB]
-      );
-      const fallbackQuestions = rows.map((r) => ({
-        id: r.id,
-        question_text: r.question_text,
-        options: r.options,
-        correct_option: r.correct_option,
-        explanation: r.explanation,
-        difficulty: r.difficulty,
-        topic: r.topic,
-      }));
-      questions = [...questions, ...fallbackQuestions];
-      console.log(`[Assessment] Pulled ${fallbackQuestions.length} global fallback questions`);
-    } catch (err) {
-      console.error("[Assessment] Fallback query failed:", err);
+    if (topicQuestions.length < plan.count) {
+      const neededLLM = plan.count - topicQuestions.length;
+      try {
+        const generated = await generateQuestionsViaLLM(plan.topic, difficulty, neededLLM);
+        if (generated && generated.length > 0) {
+          topicQuestions = [...topicQuestions, ...generated];
+          console.log(`[Assessment] Added ${generated.length} generated questions for ${plan.topic}`);
+          for (const q of generated) {
+            pool.query(
+              `INSERT INTO questions_store (topic, question_text, options, correct_option, explanation, difficulty)
+               VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING`,
+              [q.topic || plan.topic, q.question_text, JSON.stringify(q.options), q.correct_option, q.explanation, q.difficulty]
+            ).catch((e) => console.error("[Assessment] Failed to cache generated question:", e));
+          }
+        }
+      } catch (err) {
+        console.error(`[Assessment] Error during LLM generation for ${plan.topic}:`, err);
+      }
     }
+
+    if (topicQuestions.length < plan.count) {
+      try {
+        const fallbackQuestions = await loadTopicFallbackQuestions(plan.topic, plan.count - topicQuestions.length);
+        topicQuestions = [...topicQuestions, ...fallbackQuestions];
+        console.log(`[Assessment] Pulled ${fallbackQuestions.length} topic-matched fallback questions for ${plan.topic}`);
+      } catch (err) {
+        console.error(`[Assessment] Topic fallback query failed for ${plan.topic}:`, err);
+      }
+    }
+
+    if (topicQuestions.length < plan.count) {
+      console.warn(`[Assessment] Could only create ${topicQuestions.length}/${plan.count} questions for ${plan.topic}; refusing unrelated global fallback.`);
+    }
+
+    questions = [...questions, ...topicQuestions.slice(0, plan.count)];
   }
 
   // Trim to exactly requested count

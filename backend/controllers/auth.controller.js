@@ -3,21 +3,61 @@ import { signToken, resolveAvatarUrl } from "../services/token.service.js";
 import pool from "../db/pool.js";
 
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
+const ALLOWED_FRONTEND_ORIGINS = new Set([
+  FRONTEND_URL,
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+]);
+
+function encodeState(payload) {
+  return Buffer.from(JSON.stringify(payload)).toString("base64url");
+}
+
+function decodeState(value) {
+  try {
+    return JSON.parse(Buffer.from(value, "base64url").toString("utf8"));
+  } catch {
+    return {};
+  }
+}
+
+function safeFrontendUrl(origin) {
+  if (!origin || typeof origin !== "string") return FRONTEND_URL;
+  try {
+    const url = new URL(origin);
+    const normalized = url.origin;
+    return ALLOWED_FRONTEND_ORIGINS.has(normalized) ? normalized : FRONTEND_URL;
+  } catch {
+    return FRONTEND_URL;
+  }
+}
+
+function isAdminEmail(email) {
+  return (process.env.ADMIN_EMAILS || "")
+    .split(",")
+    .map((entry) => entry.trim().toLowerCase())
+    .filter(Boolean)
+    .includes((email || "").toLowerCase());
+}
 
 export function googleAuth(req, res, next) {
+  const frontendUrl = safeFrontendUrl(req.query.frontendUrl);
   passport.authenticate("google", {
     scope: ["profile", "email"],
     session: false,
+    state: encodeState({ frontendUrl }),
   })(req, res, next);
 }
 
 export function googleCallback(req, res, next) {
   passport.authenticate("google", { session: false }, (err, user) => {
+    const state = decodeState(req.query.state);
+    const frontendUrl = safeFrontendUrl(state.frontendUrl);
     if (err || !user) {
-      return res.redirect(`${FRONTEND_URL}/auth/callback?error=auth_failed`);
+      return res.redirect(`${frontendUrl}/auth/callback?error=auth_failed`);
     }
     const token = signToken(user);
-    res.redirect(`${FRONTEND_URL}/auth/callback?token=${token}`);
+    res.redirect(`${frontendUrl}/auth/callback?token=${token}`);
   })(req, res, next);
 }
 
@@ -40,6 +80,7 @@ export async function getMe(req, res) {
       displayName: user.display_name,
       avatarUrl: resolveAvatarUrl(user.email, user.avatar_url),
       createdAt: user.created_at,
+      isAdmin: isAdminEmail(user.email),
     });
   } catch (err) {
     console.error("getMe error:", err);
