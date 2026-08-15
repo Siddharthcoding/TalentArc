@@ -11,12 +11,12 @@ export default function ThemeToggle({ className }) {
       onClick={toggleTheme}
       className={cn(
         'relative p-2 rounded-xl transition-colors',
-        'hover:bg-zinc-100 dark:hover:bg-zinc-800',
-        'text-zinc-500 dark:text-zinc-400',
-        'focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500',
+        'hover:bg-[#0FA34E]/10',
+        'text-[#0FA34E]',
+        'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0FA34E]',
         className
       )}
-      aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+      aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
     >
       <div className="relative w-5 h-5">
         <motion.div

@@ -21,25 +21,25 @@ function SkillPill({ skill, matched }) {
       whileTap={{ scale: 0.96 }}
       onClick={matched ? undefined : handleCopy}
       className={cn(
-        'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-200',
+        'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono font-bold border transition-all duration-200',
         matched
-          ? 'bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400 border-green-200/50 dark:border-green-800/40 cursor-default'
-          : 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border-amber-200/50 dark:border-amber-800/40 cursor-pointer hover:shadow-sm hover:shadow-amber-500/20'
+          ? 'bg-[#DFF5E6] text-[#0FA34E] border-[#0FA34E]/30 cursor-default'
+          : 'bg-[#E1584A]/10 text-[#E1584A] border-[#E1584A]/30 cursor-pointer hover:bg-[#E1584A]/20'
       )}
-      title={matched ? undefined : 'Click to copy'}
+      title={matched ? undefined : 'Click to copy keyword'}
     >
       {matched ? (
-        <CheckCircle2 className="w-3 h-3" />
+        <CheckCircle2 className="w-3.5 h-3.5 text-[#0FA34E]" />
       ) : (
-        <XCircle className="w-3 h-3" />
+        <XCircle className="w-3.5 h-3.5 text-[#E1584A]" />
       )}
-      {skill}
+      <span>{skill}</span>
       {!matched && (
-        <span className="relative">
+        <span className="relative ml-0.5">
           {copied ? (
-            <Check className="w-3 h-3 text-green-500" />
+            <Check className="w-3 h-3 text-[#0FA34E]" />
           ) : (
-            <Copy className="w-3 h-3 opacity-50 group-hover:opacity-100" />
+            <Copy className="w-3 h-3 opacity-60 group-hover:opacity-100" />
           )}
         </span>
       )}
@@ -51,17 +51,19 @@ function SkillSection({ title, skills, matched }) {
   if (!skills || skills.length === 0) return null;
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-3">
-        <h4 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <h4 className="text-xs font-mono font-bold text-[#0FA34E] uppercase">
           {title}
         </h4>
-        <span className={cn(
-          'text-xs font-medium px-2 py-0.5 rounded-full',
-          matched
-            ? 'bg-green-50 text-green-600 dark:bg-green-950/30 dark:text-green-400'
-            : 'bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400'
-        )}>
+        <span
+          className={cn(
+            'text-[10px] font-mono font-black px-2 py-0.5 rounded-full',
+            matched
+              ? 'bg-[#0FA34E] text-[#D7F27A]'
+              : 'bg-[#E1584A] text-white'
+          )}
+        >
           {skills.length}
         </span>
       </div>
@@ -93,64 +95,47 @@ export default function SkillGapPanel({ skillDetails, keywordDetails }) {
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.3, duration: 0.5 }}
-      className="space-y-6"
+      transition={{ delay: 0.2, duration: 0.4 }}
+      className="bg-[#F6E9D2] border-2 border-[#0FA34E]/30 rounded-3xl p-6 md:p-8 shadow-xl text-left space-y-6"
     >
-      <h3 className="font-mono text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.22em]">
-        Skill & Keyword Gap Analysis
-      </h3>
+      <div className="flex items-center justify-between border-b border-[#0FA34E]/20 pb-3">
+        <div>
+          <h3 className="font-display font-extrabold text-xl text-[#0FA34E]">
+            Skill & Keyword Gap Breakdown
+          </h3>
+          <p className="text-xs font-medium text-[#0B7C3C] mt-0.5">
+            Click any missing keyword pill to copy it directly into your clipboard.
+          </p>
+        </div>
+      </div>
 
-      <div className="glass-card !p-6 space-y-6">
-        {(matchedSkills.length > 0 || missingSkills.length > 0) && (
-          <>
-            {matchedSkills.length > 0 && (
-              <SkillSection
-                title="Matched Skills"
-                skills={matchedSkills}
-                matched={true}
-              />
-            )}
+      <div className="space-y-5">
+        <SkillSection
+          title="Matched Required Competencies"
+          skills={matchedSkills}
+          matched={true}
+        />
 
-            {matchedSkills.length > 0 && missingSkills.length > 0 && (
-              <div className="border-t soft-divider" />
-            )}
+        <SkillSection
+          title="Missing Keywords & Recommended Additions"
+          skills={missingSkills}
+          matched={false}
+        />
 
-            {missingSkills.length > 0 && (
-              <SkillSection
-                title="Missing Skills - Click to Copy & Inject"
-                skills={missingSkills}
-                matched={false}
-              />
-            )}
-          </>
+        {overlappingKeywords.length > 0 && (
+          <SkillSection
+            title="Overlapping Job Description Keywords"
+            skills={overlappingKeywords}
+            matched={true}
+          />
         )}
 
-        {keywordSection && (
-          <>
-            {missingSkills.length > 0 && (
-              <div className="border-t soft-divider" />
-            )}
-
-            {overlappingKeywords.length > 0 && (
-              <SkillSection
-                title="Matched ATS Keywords"
-                skills={overlappingKeywords}
-                matched={true}
-              />
-            )}
-
-            {overlappingKeywords.length > 0 && missingKeywords.length > 0 && (
-              <div className="border-t soft-divider" />
-            )}
-
-            {missingKeywords.length > 0 && (
-              <SkillSection
-                title="Missing ATS Keywords"
-                skills={missingKeywords}
-                matched={false}
-              />
-            )}
-          </>
+        {missingKeywords.length > 0 && (
+          <SkillSection
+            title="Missing High-Frequency JD Terms"
+            skills={missingKeywords}
+            matched={false}
+          />
         )}
       </div>
     </motion.div>

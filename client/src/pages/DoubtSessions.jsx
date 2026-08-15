@@ -70,7 +70,8 @@ export default function DoubtSessions() {
   const [newPollOptionsText, setNewPollOptionsText] = useState('HighRadius - SQL & Java OA Query Drill\nMicrosoft - DSA Hard & Low-Level Design\nDeloitte USI - AMCAT Aptitude & Case Study\nAmazon - DP & Leadership Principles');
   const [creatingPoll, setCreatingPoll] = useState(false);
 
-  const isAdmin = user && ADMIN_EMAILS.includes(user.email?.toLowerCase());
+  const isAdmin = user && (ADMIN_EMAILS.includes(user.email?.toLowerCase()) || user.role === 'admin');
+
 
   // Fetch live doubt sessions
   const loadSessions = () => {
@@ -209,6 +210,10 @@ export default function DoubtSessions() {
 
   const handleCreatePoll = async (e) => {
     e.preventDefault();
+    if (!isAdmin) {
+      showToast('Admin privileges required to create polls', 'error');
+      return;
+    }
     if (!newPollTitle.trim()) {
       showToast('Please provide a poll title', 'error');
       return;
@@ -499,20 +504,16 @@ export default function DoubtSessions() {
             </p>
           </div>
 
-          <button
-            onClick={() => {
-              if (!user) {
-                showToast('Please sign in to create a poll', 'error');
-                return;
-              }
-              setIsCreatePollOpen(true);
-            }}
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-full font-display font-extrabold text-xs sm:text-sm shadow-md transition-all hover:opacity-90 self-start sm:self-auto shrink-0"
-            style={{ background: '#0FA34E', color: '#D7F27A', border: '1.5px solid rgba(198, 255, 61, 0.4)' }}
-          >
-            <MessageSquarePlus className="w-4 h-4" />
-            <span>+ Create Custom Poll</span>
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => setIsCreatePollOpen(true)}
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-full font-display font-extrabold text-xs sm:text-sm shadow-md transition-all hover:opacity-90 self-start sm:self-auto shrink-0"
+              style={{ background: '#0FA34E', color: '#D7F27A', border: '1.5px solid rgba(198, 255, 61, 0.4)' }}
+            >
+              <MessageSquarePlus className="w-4 h-4" />
+              <span>+ Create Custom Poll (Admin)</span>
+            </button>
+          )}
         </div>
 
         {/* Polls Listing */}
@@ -525,7 +526,7 @@ export default function DoubtSessions() {
           <div className="p-8 text-center rounded-3xl border-2 bg-[#F6E9D2]" style={{ borderColor: '#0FA34E33' }}>
             <Vote className="w-10 h-10 text-[#0FA34E] mx-auto mb-2 opacity-60" />
             <h3 className="font-display font-bold text-lg text-[#0FA34E]">No Active Demand Polls Yet</h3>
-            <p className="text-xs text-[#0B7C3C88] mt-1">Be the first to create a poll and invite classmates to vote!</p>
+            <p className="text-xs text-[#0B7C3C88] mt-1">The placement team will publish new target company demand polls shortly.</p>
           </div>
         ) : (
           <div className="space-y-8">

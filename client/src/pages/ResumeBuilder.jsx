@@ -52,22 +52,62 @@ function KiitStandardPreview({ d }) {
 
 function MinimalTechPreview({ d }) {
   return (
-    <div style={{ fontFamily: '"Helvetica Neue", Arial, sans-serif', fontSize: 11, color: '#1a1a2e', lineHeight: 1.55 }}>
-      <div style={{ borderBottom: '3px solid #1a1a2e', paddingBottom: 12, marginBottom: 14 }}>
-        <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: '-0.5px' }}>{d.name || 'Your Name'}</div>
-        <div style={{ fontSize: 11, color: '#555', fontWeight: 600 }}>{d.role}</div>
-        <div style={{ marginTop: 4, display: 'flex', gap: 14, flexWrap: 'wrap', fontSize: 10, color: '#777' }}>
-          <span>{d.email}</span>
-          <span>{d.phone}</span>
-          {d.linkedin && <span>{d.linkedin}</span>}
-          {d.github && <span>{d.github}</span>}
+    <div style={{ fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', fontSize: 11, color: '#111827', lineHeight: 1.55, padding: '24px 28px', background: '#ffffff', minHeight: 680 }}>
+      {/* Header */}
+      <div style={{ borderBottom: '2px solid #111827', paddingBottom: 14, marginBottom: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
+          <div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: '#111827', letterSpacing: '-0.5px' }}>
+              {d.name || 'Your Name'}
+            </div>
+            <div style={{ fontSize: 11.5, color: '#0FA34E', fontWeight: 700, marginTop: 2 }}>
+              {d.role}
+            </div>
+          </div>
+          <div style={{ fontSize: 9.5, color: '#4B5563', lineHeight: 1.6, textAlign: 'right', fontWeight: 500 }}>
+            <div>{d.email} • {d.phone}</div>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap', marginTop: 2 }}>
+              {d.linkedin && <span>{d.linkedin}</span>}
+              {d.github && <span>{d.github}</span>}
+            </div>
+          </div>
         </div>
       </div>
-      {d.education && <Section title="Education" color="#1a1a2e" minimal><pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0, fontSize: 10.5 }}>{d.education}</pre></Section>}
-      {d.skills && <Section title="Technical Skills" color="#1a1a2e" minimal><p style={{ fontFamily: '"Courier New", monospace', fontSize: 10, margin: 0 }}>{d.skills}</p></Section>}
-      {d.experience && <Section title="Experience" color="#1a1a2e" minimal><pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0, fontSize: 10.5 }}>{d.experience}</pre></Section>}
-      {d.projects && <Section title="Projects" color="#1a1a2e" minimal><pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0, fontSize: 10.5 }}>{d.projects}</pre></Section>}
-      {d.achievements && <Section title="Achievements" color="#1a1a2e" minimal><pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0, fontSize: 10.5 }}>{d.achievements}</pre></Section>}
+
+      {/* Sections */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {d.education && (
+          <Section title="Education" color="#111827" minimal>
+            <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0, fontSize: 10.5, color: '#1F2937' }}>{d.education}</pre>
+          </Section>
+        )}
+        {d.skills && (
+          <Section title="Technical Skills" color="#111827" minimal>
+            <p style={{ fontFamily: '"JetBrains Mono", "Courier New", monospace', fontSize: 10, color: '#111827', margin: 0, fontWeight: 600, background: '#F9FAFB', padding: '6px 10px', borderRadius: 4, border: '1px solid #E5E7EB' }}>
+              {d.skills}
+            </p>
+          </Section>
+        )}
+        {d.experience && (
+          <Section title="Professional Experience" color="#111827" minimal>
+            <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0, fontSize: 10.5, color: '#1F2937' }}>{d.experience}</pre>
+          </Section>
+        )}
+        {d.projects && (
+          <Section title="Projects & Capstones" color="#111827" minimal>
+            <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0, fontSize: 10.5, color: '#1F2937' }}>{d.projects}</pre>
+          </Section>
+        )}
+        {d.achievements && (
+          <Section title="Achievements & Certifications" color="#111827" minimal>
+            <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0, fontSize: 10.5, color: '#1F2937' }}>{d.achievements}</pre>
+          </Section>
+        )}
+      </div>
+
+      <div style={{ textAlign: 'right', marginTop: 16, paddingTop: 8, borderTop: '1px solid #F3F4F6', fontSize: 8, color: '#9CA3AF', fontFamily: 'monospace' }}>
+        ATS-Friendly • Minimal Tech Edition • Kampus Ace
+      </div>
     </div>
   );
 }

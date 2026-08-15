@@ -4,22 +4,20 @@ export default function GoogleButton({ onClick, className = '' }) {
   return (
     <motion.button
       onClick={onClick}
-      whileHover={{ scale: 1.02 }}
+      whileHover={{ scale: 1.02, y: -1 }}
       whileTap={{ scale: 0.98 }}
       transition={{ type: 'spring', stiffness: 400, damping: 17 }}
       className={`
         relative group flex items-center justify-center gap-3 w-full
-        px-6 py-3.5 rounded-xl font-medium text-sm
-        bg-white dark:bg-zinc-900
-        border border-zinc-200 dark:border-zinc-700
-        hover:border-indigo-300 dark:hover:border-indigo-600
-        shadow-sm hover:shadow-lg hover:shadow-indigo-500/10
-        text-zinc-700 dark:text-zinc-200
-        transition-all duration-300
+        px-6 py-3.5 rounded-full font-display font-extrabold text-sm
+        bg-[#DFF5E6] hover:bg-[#D7F27A]
+        border-2 border-[#0FA34E]/30 hover:border-[#0FA34E]
+        shadow-sm hover:shadow-md
+        text-[#0FA34E]
+        transition-all duration-200
         ${className}
       `}
     >
-      <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-indigo-500/0 via-indigo-500/0 to-purple-500/0 group-hover:from-indigo-500/5 group-hover:via-indigo-500/5 group-hover:to-purple-500/5 transition-all duration-500" />
       <svg
         width="20"
         height="20"
@@ -32,7 +30,7 @@ export default function GoogleButton({ onClick, className = '' }) {
         <path fill="#FBBC05" d="M10.54 28.59A14.5 14.5 0 0 1 9.5 24c0-1.59.28-3.14.76-4.59l-7.98-6.19A23.99 23.99 0 0 0 0 24c0 3.77.87 7.35 2.56 10.56l7.98-5.97z" />
         <path fill="#EA4335" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 5.97C6.51 42.62 14.62 48 24 48z" />
       </svg>
-      <span className="relative z-10">Sign in with Google</span>
+      <span className="relative z-10 font-bold">Sign in with Google</span>
     </motion.button>
   );
 }

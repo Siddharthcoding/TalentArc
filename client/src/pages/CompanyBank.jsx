@@ -298,20 +298,13 @@ export default function CompanyBank() {
       {/* ── QUESTION CONTRIBUTION MODAL ── */}
       <AnimatePresence>
         {isModalOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            style={{ background: "rgba(11, 124, 60, 0.65)", backdropFilter: "blur(6px)" }}
-            onClick={(e) => e.target === e.currentTarget && setIsModalOpen(false)}
-          >
+          <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
             <motion.div
-              initial={{ scale: 0.94, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.94, y: 20 }}
-              className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border-2 p-6 sm:p-8 shadow-2xl space-y-5"
-              style={{ background: "#F6E9D2", borderColor: "#0FA34E" }}
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border-2 p-6 sm:p-8 shadow-2xl space-y-5 relative bg-[#F6E9D2]"
+              style={{ borderColor: "#0FA34E" }}
             >
               {/* Modal Top */}
               <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: "rgba(15, 163, 78, 0.2)" }}>
@@ -517,7 +510,7 @@ export default function CompanyBank() {
                 </button>
               </form>
             </motion.div>
-          </motion.div>
+          </div>
         )}
       </AnimatePresence>
 

@@ -8,19 +8,19 @@ const REPORT_LABELS = {
   ats: {
     title: 'ATS Score Analysis',
     bullets: [
-      { icon: BarChart3, text: 'Full 100-point breakdown across 5 analysis layers' },
+      { icon: BarChart3, text: 'Full 100-point breakdown across all scoring categories' },
       { icon: Lightbulb, text: 'Keyword Optimization Blueprint with ranked suggestions' },
-      { icon: BookOpen, text: 'AI-Powered Rewrite recommendations' },
-      { icon: Sparkles, text: 'Save reports to your account for future reference' },
+      { icon: BookOpen, text: 'AI-Powered Resume Rewrite recommendations' },
+      { icon: Sparkles, text: 'Automatic report archive in your KIIT student profile' },
     ],
   },
   jd_match: {
     title: 'JD Match Report',
     bullets: [
       { icon: BarChart3, text: 'Comprehensive skill-by-skill match breakdown' },
-      { icon: Lightbulb, text: 'Personalized skill gap analysis & roadmap' },
-      { icon: BookOpen, text: 'AI rewrite suggestions tailored to the job' },
-      { icon: Sparkles, text: 'Save matches to your account for later review' },
+      { icon: Lightbulb, text: 'Personalized skill gap analysis & learning roadmap' },
+      { icon: BookOpen, text: 'AI rewrite suggestions tailored to the specific job description' },
+      { icon: Sparkles, text: 'Save matches to your student account for later review' },
     ],
   },
 };
@@ -31,62 +31,42 @@ function AuthWallInner({ reportType }) {
 
   return (
     <div className="flex flex-col items-center text-center">
-      <div className="relative mb-6">
-        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-100 to-violet-100 dark:from-indigo-950/60 dark:to-violet-950/60 flex items-center justify-center shadow-lg shadow-indigo-500/10">
-          <Lock className="w-9 h-9 text-indigo-600 dark:text-indigo-400" />
+      <div className="relative mb-5">
+        <div className="w-16 h-16 rounded-2xl bg-[#0FA34E] text-[#D7F27A] flex items-center justify-center shadow-lg shadow-[#0FA34E]/20">
+          <Lock className="w-8 h-8" />
         </div>
         <motion.div
-          animate={{ scale: [1, 1.15, 1], opacity: [0.4, 0.7, 0.4] }}
+          animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.7, 0.3] }}
           transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute -inset-2.5 rounded-2xl border border-indigo-300/40 dark:border-indigo-500/30"
+          className="absolute -inset-2 rounded-2xl border-2 border-[#0FA34E]/30 pointer-events-none"
         />
       </div>
 
-      <h2 className="text-2xl md:text-3xl font-bold mb-2">
-        <span className="gradient-text">Your {labels.title} is Ready!</span>
-      </h2>
-      <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-8 max-w-sm">
-        Sign in to unlock your full personalized report and insights.
-      </p>
-
-      <div className="relative w-full mb-8">
-        <div className="glass-card p-6 relative overflow-hidden">
-          <div className="absolute inset-0 backdrop-blur-sm bg-white/30 dark:bg-zinc-900/40" />
-          <div className="absolute inset-0 flex items-center justify-center z-10">
-            <div className="w-12 h-12 rounded-full bg-zinc-900/10 dark:bg-white/10 backdrop-blur-sm flex items-center justify-center">
-              <Lock className="w-6 h-6 text-zinc-500 dark:text-zinc-400" />
-            </div>
-          </div>
-          <div className="relative z-0 opacity-30">
-            <div className="flex items-center justify-between mb-3">
-              <div className="h-3 w-24 rounded bg-zinc-300 dark:bg-zinc-600" />
-              <div className="h-8 w-16 rounded-lg bg-gradient-to-r from-indigo-300 to-violet-300 dark:from-indigo-600 dark:to-violet-600" />
-            </div>
-            <div className="space-y-2">
-              {[80, 60, 40].map((w) => (
-                <div key={w} className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-zinc-300 dark:bg-zinc-600" />
-                  <div className={`h-2 rounded bg-zinc-200 dark:bg-zinc-700 flex-1`} style={{ maxWidth: `${w}%` }} />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+      <div className="inline-block bg-[#0FA34E]/10 text-[#0FA34E] font-mono text-[10px] font-black px-3 py-0.5 rounded-full uppercase border border-[#0FA34E]/20 mb-2">
+        ★ KIIT STUDENT ACCESS GATEWAY
       </div>
 
-      <div className="w-full space-y-3 mb-8 text-left">
+      <h2 className="text-2xl md:text-3xl font-extrabold text-[#0FA34E] mb-2 font-display">
+        Your {labels.title} is Ready!
+      </h2>
+      <p className="text-sm font-medium text-[#0B7C3C] mb-6 max-w-sm leading-relaxed">
+        Sign in with your Google account to unlock your full detailed report and save it to your archive.
+      </p>
+
+      {/* Feature bullets */}
+      <div className="w-full space-y-2.5 mb-6 text-left bg-[#DFF5E6] border border-[#0FA34E]/20 p-4 rounded-2xl">
         {labels.bullets.map((item, i) => (
           <motion.div
             key={i}
-            initial={{ opacity: 0, x: -12 }}
+            initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 + i * 0.08, duration: 0.4 }}
-            className="flex items-start gap-3"
+            transition={{ delay: 0.15 + i * 0.06, duration: 0.3 }}
+            className="flex items-start gap-2.5"
           >
-            <div className="mt-0.5 shrink-0 w-5 h-5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+            <div className="mt-0.5 shrink-0 w-4 h-4 rounded-full bg-[#0FA34E] text-[#D7F27A] flex items-center justify-center">
+              <CheckCircle2 className="w-3 h-3" />
             </div>
-            <span className="text-sm text-zinc-600 dark:text-zinc-300">{item.text}</span>
+            <span className="text-xs font-semibold text-[#0B7C3C]">{item.text}</span>
           </motion.div>
         ))}
       </div>
@@ -95,8 +75,8 @@ function AuthWallInner({ reportType }) {
         <GoogleButton onClick={login} />
       </div>
 
-      <p className="mt-4 text-xs text-zinc-400 dark:text-zinc-500">
-        Your results will be saved — no re-upload needed
+      <p className="mt-4 text-[11px] font-mono font-bold text-[#0B7C3C]/70">
+        🔒 Results automatically saved — no re-upload required
       </p>
     </div>
   );
@@ -117,17 +97,16 @@ export default function AuthWall({ reportType, onAuthSuccess }) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        transition={{ duration: 0.3 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xl"
+        transition={{ duration: 0.25 }}
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
       >
         <motion.div
-          initial={{ scale: 0.88, opacity: 0, y: 40 }}
+          initial={{ scale: 0.92, opacity: 0, y: 30 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
-          exit={{ scale: 0.88, opacity: 0, y: 20 }}
-          transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-          className="glass-card max-w-lg w-full p-8 md:p-10 relative overflow-hidden"
+          exit={{ scale: 0.92, opacity: 0, y: 20 }}
+          transition={{ type: 'spring', damping: 26, stiffness: 280 }}
+          className="bg-[#F6E9D2] border-2 border-[#0FA34E] rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative overflow-hidden"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/[0.02] to-violet-500/[0.02] dark:from-indigo-500/[0.04] dark:to-violet-500/[0.04] pointer-events-none" />
           <div className="relative">
             <AuthWallInner reportType={reportType} />
           </div>

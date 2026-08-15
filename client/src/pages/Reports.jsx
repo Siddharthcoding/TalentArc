@@ -5,6 +5,7 @@ import { getReports, deleteReport, getUserAssessments, deleteAssessment } from '
 import ReportCard from '@/components/reports/ReportCard';
 import ReportsEmpty from '@/components/reports/ReportsEmpty';
 import { cn } from '@/utils/cn';
+import SEO from '@/components/SEO';
 
 const FILTERS = [
   { key: null, label: 'All Reports', icon: null },
@@ -79,6 +80,12 @@ export default function Reports() {
 
   return (
     <div className="section-container py-24 space-y-8 text-left max-w-4xl mx-auto">
+      <SEO
+        title="Saved Reports"
+        description="Access all your saved ATS resume scores, job description match reports, and AI mock assessment scorecards."
+        path="/reports"
+        keywords="saved ATS reports, resume score history, KIIT mock assessment scorecard, JD match reports"
+      />
       <div>
         <div className="inline-block bg-[#0FA34E] text-[#C6FF3D] font-mono text-xs font-black px-3.5 py-1 rounded-full uppercase mb-2 shadow">
           ★ PERSISTENT STUDENT EVALUATION ARCHIVE
@@ -130,7 +137,7 @@ export default function Reports() {
         </div>
       )}
 
-      {!loading && !error && reports.length === 0 && <ReportsEmpty />}
+      {!loading && !error && reports.length === 0 && <ReportsEmpty filter={activeFilter} />}
 
       {!loading && reports.length > 0 && (
         <AnimatePresence mode="wait">

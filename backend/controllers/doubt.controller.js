@@ -367,6 +367,10 @@ export const createDoubtPoll = async (req, res) => {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ success: false, error: 'Login required to create a poll' });
 
+    if (!isAdmin(req.user)) {
+      return res.status(403).json({ success: false, error: 'Admin access required to create demand polls' });
+    }
+
     const { title, description, options } = req.body;
     if (!title || !title.trim()) {
       return res.status(400).json({ success: false, error: 'Poll title / question is required' });

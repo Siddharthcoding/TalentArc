@@ -6,6 +6,8 @@ import { getReport } from '@/services/api';
 import DashboardGrid from '@/components/dashboard/DashboardGrid';
 import MatchDashboard from '@/components/jdmatcher/MatchDashboard';
 import SectionWrapper from '@/components/ui/SectionWrapper';
+import SEO from '@/components/SEO';
+
 
 export default function ReportDetail() {
   const { id } = useParams();
@@ -72,6 +74,12 @@ export default function ReportDetail() {
 
   return (
     <SectionWrapper className="min-h-screen pt-32 pb-16" style={{ background: '#D7F27A' }}>
+      <SEO
+        title={reportTitle}
+        description={`View your detailed ${isATS ? 'ATS resume scoring and feedback' : 'job description skill match'} report on Kampus Ace.`}
+        path={`/reports/${id}`}
+        noIndex
+      />
       <div className="max-w-6xl mx-auto">
         {/* Breadcrumb */}
         <div className="flex items-center gap-3 mb-8">
