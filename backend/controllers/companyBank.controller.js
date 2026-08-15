@@ -1,4 +1,5 @@
 import pool from "../db/pool.js";
+import { sendQuestionContributionEmail } from "../services/email.service.js";
 
 const QUESTION_TYPES = ["text", "mcq", "image"];
 const DIFFICULTIES = ["Easy", "Medium", "Hard"];
@@ -259,3 +260,69 @@ export const deleteCompanyQuestion = async (req, res) => {
     res.status(500).json({ success: false, error: "Failed to delete question" });
   }
 };
+
+/**
+ * Handle student question contribution submission
+ */
+export const contributeQuestion = async (req, res) => {
+  try {
+    const {
+      companyName,
+      companyId,
+      roundType,
+      questionTitle,
+      questionType = "text",
+      difficulty = "Medium",
+      questionBody,
+      options,
+      correctOption,
+      image_url,
+      tags,
+      contributorName,
+      contributorEmail,
+      contributorBatch,
+    } = req.body;
+
+    if (!questionTitle || !String(questionTitle).trim()) {
+      return res.status(400).json({ success: false, error: "Question title is required." });
+    }
+
+    let resolvedCompanyName = companyName;
+    if (!resolvedCompanyName && companyId) {
+      const companyRes = await pool.query(`SELECT name FROM companies WHERE id = $1`, [companyId]);
+      resolvedCompanyName = companyRes.rows[0]?.name || "Unspecified Company";
+    }
+
+    const studentName = contributorName || req.user?.displayName || "Student Contributor";
+    const studentEmail = contributorEmail || req.user?.email || "anonymous@kiit.ac.in";
+
+    // Trigger non-blocking admin notification email
+    sendQuestionContributionEmail({
+      companyName: resolvedCompanyName,
+      questionTitle: questionTitle.trim(),
+      questionBody: questionBody?.trim() || "",
+      roundType: roundType || "Online Assessment / Technical Round",
+      questionType,
+      difficulty,
+      tags: typeof tags === "string" ? tags : Array.isArray(tags) ? tags.join(", ") : "",
+      options: Array.isArray(options) ? options : [],
+      correctOption,
+      image_url: image_url?.trim() || null,
+      contributorName: studentName,
+      contributorEmail: studentEmail,
+      contributorBatch: contributorBatch || "KIIT Student",
+    }).catch((err) => {
+      console.error("[CompanyBank] Background email dispatch failed:", err);
+    });
+
+
+    res.json({
+      success: true,
+      message: "Thank you! Your question contribution has been submitted. The admin team will review and publish it to the company bank.",
+    });
+  } catch (err) {
+    console.error("[CompanyBank] contributeQuestion error:", err);
+    res.status(500).json({ success: false, error: "Failed to process question contribution." });
+  }
+};
+

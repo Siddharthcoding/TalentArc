@@ -17,23 +17,17 @@ export default function ReportDetail() {
     setLoading(true);
     setError(null);
     getReport(id)
-      .then((res) => {
-        setReport(res.data);
-      })
-      .catch((err) => {
-        setError(err?.message || 'Failed to load report');
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+      .then((res) => { setReport(res.data); })
+      .catch((err) => { setError(err?.message || 'Failed to load report'); })
+      .finally(() => { setLoading(false); });
   }, [id]);
 
   if (loading) {
     return (
-      <SectionWrapper className="min-h-screen flex items-center justify-center pt-20">
+      <SectionWrapper className="min-h-screen flex items-center justify-center pt-20" style={{ background: '#D7F27A' }}>
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
-          <p className="text-sm text-zinc-400">Loading report...</p>
+          <Loader2 className="w-6 h-6 animate-spin" style={{ color: '#0FA34E' }} />
+          <p className="text-sm font-semibold" style={{ color: '#0B7C3C' }}>Loading report...</p>
         </div>
       </SectionWrapper>
     );
@@ -41,18 +35,24 @@ export default function ReportDetail() {
 
   if (error || !report) {
     return (
-      <SectionWrapper className="min-h-screen flex items-center justify-center pt-20">
+      <SectionWrapper className="min-h-screen flex items-center justify-center pt-20" style={{ background: '#D7F27A' }}>
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass-card p-8 max-w-md w-full text-center"
+          className="p-8 max-w-md w-full text-center rounded-3xl border-2 shadow-xl"
+          style={{ background: '#F6E9D2', borderColor: '#E1584A33' }}
         >
-          <AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-4" />
-          <h2 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">Report not found</h2>
-          <p className="text-sm text-zinc-500 mb-6">{error || 'This report may have been deleted.'}</p>
+          <AlertCircle className="w-10 h-10 mx-auto mb-4" style={{ color: '#E1584A' }} />
+          <h2 className="text-lg font-bold mb-2" style={{ color: '#0B7C3C', fontFamily: '"Baloo 2", cursive' }}>
+            Report not found
+          </h2>
+          <p className="text-sm mb-6" style={{ color: '#0B7C3C88' }}>
+            {error || 'This report may have been deleted.'}
+          </p>
           <Link
             to="/reports"
-            className="inline-flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
+            className="inline-flex items-center gap-2 text-sm font-bold"
+            style={{ color: '#0FA34E' }}
           >
             <ArrowLeft className="w-4 h-4" />
             Back to My Reports
@@ -71,29 +71,29 @@ export default function ReportDetail() {
       : 'JD Match Report';
 
   return (
-    <SectionWrapper className="min-h-screen pt-20 pb-16">
+    <SectionWrapper className="min-h-screen pt-32 pb-16" style={{ background: '#D7F27A' }}>
       <div className="max-w-6xl mx-auto">
+        {/* Breadcrumb */}
         <div className="flex items-center gap-3 mb-8">
           <Link
             to="/reports"
-            className="flex items-center gap-1.5 text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
+            className="flex items-center gap-1.5 text-sm font-semibold transition-colors hover:opacity-75"
+            style={{ color: '#0B7C3C' }}
           >
             <ArrowLeft className="w-4 h-4" />
             My Reports
           </Link>
-          <span className="text-zinc-300 dark:text-zinc-600">/</span>
+          <span style={{ color: '#0B7C3C44' }}>/</span>
           <div className="flex items-center gap-2">
-            <div className={cn(
-              'w-7 h-7 rounded-lg flex items-center justify-center',
-              isATS ? 'bg-indigo-50 dark:bg-indigo-950/40' : 'bg-amber-50 dark:bg-amber-950/40'
-            )}>
-              {isATS ? (
-                <FileText className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-              ) : (
-                <Briefcase className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-              )}
+            <div
+              className="w-7 h-7 rounded-lg flex items-center justify-center"
+              style={{ background: isATS ? '#DFF5E6' : '#E8A33D22' }}
+            >
+              {isATS
+                ? <FileText className="w-3.5 h-3.5" style={{ color: '#0FA34E' }} />
+                : <Briefcase className="w-3.5 h-3.5" style={{ color: '#E8A33D' }} />}
             </div>
-            <span className="text-sm font-semibold text-zinc-900 dark:text-white truncate max-w-[300px]">
+            <span className="text-sm font-bold truncate max-w-[300px]" style={{ color: '#0B7C3C' }}>
               {reportTitle}
             </span>
           </div>
@@ -113,8 +113,4 @@ export default function ReportDetail() {
       </div>
     </SectionWrapper>
   );
-}
-
-function cn(...classes) {
-  return classes.filter(Boolean).join(' ');
 }

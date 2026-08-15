@@ -57,10 +57,10 @@ function JdMatcherContent() {
   const effectiveResult = cachedResult || result;
 
   return (
-    <section className="relative min-h-screen pt-24 pb-16 overflow-hidden">
+    <section className="relative min-h-screen pt-28 pb-16 overflow-hidden">
       <div className="absolute inset-0 bg-grid pointer-events-none" />
-      <div className="absolute top-1/3 -left-32 w-96 h-96 bg-indigo-400/8 rounded-full blur-3xl" />
-      <div className="absolute bottom-1/3 -right-32 w-96 h-96 bg-violet-400/8 rounded-full blur-3xl" />
+      <div className="absolute top-1/3 -left-32 w-96 h-96 bg-cyan-400/15 rounded-full blur-3xl" />
+      <div className="absolute bottom-1/3 -right-32 w-96 h-96 bg-fuchsia-400/15 rounded-full blur-3xl" />
 
       <div className="section-container relative z-10">
         <AnimatePresence mode="wait">

@@ -197,4 +197,70 @@ export async function deleteCompanyQuestion(qid) {
   return data;
 }
 
+export async function contributeCompanyQuestion(payload) {
+  const { data } = await apiClient.post('/company-bank/contribute', payload);
+  return data;
+}
+
+// ─── Doubt Sessions ──────────────────────────────────────────────────────────
+
+export async function getDoubtSessions() {
+  const { data } = await apiClient.get('/doubts');
+  return data;
+}
+
+export async function bookDoubtSession(id) {
+  const { data } = await apiClient.post(`/doubts/${id}/book`);
+  return data;
+}
+
+export async function adminCreateDoubtSession(payload) {
+  const { data } = await apiClient.post('/doubts/admin', payload);
+  return data;
+}
+
+export async function adminUpdateDoubtSession(id, payload) {
+  const { data } = await apiClient.put(`/doubts/admin/${id}`, payload);
+  return data;
+}
+
+export async function adminDeleteDoubtSession(id) {
+  const { data } = await apiClient.delete(`/doubts/admin/${id}`);
+  return data;
+}
+
+export async function adminGetSessionBookings(id) {
+  const { data } = await apiClient.get(`/doubts/admin/bookings/${id}`);
+  return data;
+}
+
+// ─── Doubt Demand Polls ───────────────────────────────────────────────────────
+
+export async function getDoubtPolls() {
+  const { data } = await apiClient.get('/doubts/polls');
+  return data;
+}
+
+export async function createDoubtPoll(payload) {
+  const { data } = await apiClient.post('/doubts/polls', payload);
+  return data;
+}
+
+export async function voteDoubtPoll(pollId, optionId) {
+  const { data } = await apiClient.post(`/doubts/polls/${pollId}/vote`, { optionId });
+  return data;
+}
+
+export async function addDoubtPollOption(pollId, payload) {
+  const { data } = await apiClient.post(`/doubts/polls/${pollId}/options`, payload);
+  return data;
+}
+
+export async function deleteDoubtPoll(pollId) {
+  const { data } = await apiClient.delete(`/doubts/polls/${pollId}`);
+  return data;
+}
+
 export default apiClient;
+
+

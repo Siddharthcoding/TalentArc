@@ -50,7 +50,13 @@ const TECH_SKILLS = {
         "figma", "sketch", "adobe xd",
         "vscode", "intellij", "webstorm",
     ],
+    core_cs: [
+        "data structures", "algorithms", "dsa", "system design", "low level design", "lld", "high level design", "hld",
+        "dbms", "database management systems", "operating systems", "os", "computer networks", "cn", "oops", "object oriented programming",
+        "multithreading", "concurrency", "design patterns"
+    ],
 };
+
 
 export { TECH_SKILLS };
 

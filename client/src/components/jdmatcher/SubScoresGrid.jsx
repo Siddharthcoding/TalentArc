@@ -14,9 +14,9 @@ const CATEGORIES = [
 ];
 
 function getBarColor(pct) {
-  if (pct >= 70) return 'bg-green-500';
-  if (pct >= 40) return 'bg-amber-500';
-  return 'bg-red-500';
+  if (pct >= 70) return 'bg-gradient-to-r from-cyan-400 to-emerald-400';
+  if (pct >= 40) return 'bg-gradient-to-r from-amber-300 to-orange-400';
+  return 'bg-gradient-to-r from-rose-400 to-red-500';
 }
 
 function ScoreCard({ config, scoreData, index }) {
@@ -30,11 +30,11 @@ function ScoreCard({ config, scoreData, index }) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.1 + index * 0.08, duration: 0.5, ease: 'easeOut' }}
-      className="glass-card !p-5"
+      className="glass-card !p-5 overflow-hidden"
     >
       <div className="flex items-center gap-3 mb-3">
-        <div className="w-9 h-9 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 flex items-center justify-center shrink-0">
-          <Icon className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-100 via-fuchsia-100 to-amber-100 dark:from-cyan-500/15 dark:via-fuchsia-500/15 dark:to-amber-400/15 flex items-center justify-center shrink-0">
+          <Icon className="w-4 h-4 text-zinc-950 dark:text-white" />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 truncate">
@@ -46,7 +46,7 @@ function ScoreCard({ config, scoreData, index }) {
         </span>
       </div>
 
-      <div className="relative h-2 rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
+      <div className="relative h-2 rounded-full bg-white/70 dark:bg-white/10 overflow-hidden">
         <motion.div
           className={cn('absolute inset-y-0 left-0 rounded-full', barColor)}
           initial={{ width: '0%' }}
@@ -63,7 +63,7 @@ export default function SubScoresGrid({ breakdown }) {
 
   return (
     <div>
-      <h3 className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-4">
+      <h3 className="font-mono text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.22em] mb-4">
         Comparative Sub-Scores
       </h3>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">

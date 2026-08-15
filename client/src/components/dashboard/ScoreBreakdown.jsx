@@ -19,12 +19,6 @@ const CATEGORY_CONFIG = {
   atsCompatibility: { icon: CheckCircle2, label: 'ATS Compatibility', maxScore: 5 },
 };
 
-function getBarColor(pct) {
-  if (pct >= 70) return 'bg-green-500';
-  if (pct >= 40) return 'bg-amber-500';
-  return 'bg-red-500';
-}
-
 function DetailTooltip({ details }) {
   if (!details || Object.keys(details).length === 0) return null;
   const entries = Object.entries(details).filter(([, v]) => v !== undefined && v !== null);
@@ -37,9 +31,9 @@ function DetailTooltip({ details }) {
       exit={{ opacity: 0, height: 0 }}
       className="overflow-hidden"
     >
-      <div className="pt-2 pb-1 space-y-1">
+      <div className="pt-2 pb-1 space-y-1 border-t border-[#0FA34E]/20 mt-2">
         {entries.map(([key, value]) => (
-          <p key={key} className="text-xs text-zinc-400 dark:text-zinc-500">
+          <p key={key} className="text-xs text-[#0B7C3C] font-mono font-medium">
             {key.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase())}: {String(value)}
           </p>
         ))}
@@ -52,16 +46,15 @@ export default function ScoreBreakdown({ categories }) {
   if (!categories) return null;
 
   return (
-    <div className="space-y-3">
-      <h3 className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-        Category Breakdown
+    <div className="space-y-3 text-left">
+      <h3 className="font-mono text-xs font-bold text-[#0FA34E] uppercase tracking-wider">
+        Scoring Category Breakdown
       </h3>
       {Object.entries(CATEGORY_CONFIG).map(([key, config], index) => {
         const cat = categories[key];
         if (!cat) return null;
         const Icon = config.icon;
         const pct = cat.percentage || 0;
-        const barColor = getBarColor(pct);
 
         return (
           <CategoryRow
@@ -71,7 +64,6 @@ export default function ScoreBreakdown({ categories }) {
             score={cat.score}
             maxScore={cat.maxScore ?? config.maxScore}
             pct={pct}
-            barColor={barColor}
             details={cat.details}
             index={index}
           />
@@ -81,41 +73,41 @@ export default function ScoreBreakdown({ categories }) {
   );
 }
 
-function CategoryRow({ icon: Icon, label, score, maxScore, pct, barColor, details, index }) {
+function CategoryRow({ icon: Icon, label, score, maxScore, pct, details, index }) {
   const [open, setOpen] = useState(false);
 
   return (
     <motion.div
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: index * 0.06, duration: 0.4 }}
-      className="glass-card !p-4 cursor-pointer hover:border-zinc-300 dark:hover:border-zinc-600 transition-colors"
+      transition={{ delay: index * 0.05, duration: 0.4 }}
+      className="bg-[#F6E9D2] border-2 border-[#0FA34E]/20 rounded-2xl p-4 cursor-pointer hover:border-[#0FA34E] transition-colors shadow-sm"
       onClick={() => setOpen(!open)}
     >
       <div className="flex items-center gap-3 mb-2">
-        <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 flex items-center justify-center shrink-0">
-          <Icon className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+        <div className="w-8 h-8 rounded-xl bg-[#0FA34E] text-[#C6FF3D] flex items-center justify-center shrink-0 shadow">
+          <Icon className="w-4 h-4" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200 truncate">{label}</span>
-            <span className="text-sm font-semibold text-zinc-600 dark:text-zinc-400 tabular-nums shrink-0">
+            <span className="font-display font-extrabold text-sm text-[#0FA34E] truncate">{label}</span>
+            <span className="font-mono text-xs font-bold text-[#0FA34E] tabular-nums shrink-0">
               {score}/{maxScore}
             </span>
           </div>
         </div>
         <ChevronDown className={cn(
-          'w-4 h-4 text-zinc-400 transition-transform duration-200 shrink-0',
+          'w-4 h-4 text-[#0FA34E] transition-transform duration-200 shrink-0',
           open && 'rotate-180'
         )} />
       </div>
 
-      <div className="relative h-2 rounded-full bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
+      <div className="relative h-2 rounded-full bg-[#D7F27A] overflow-hidden border border-[#0FA34E]/20">
         <motion.div
-          className={cn('absolute inset-y-0 left-0 rounded-full', barColor)}
+          className="absolute inset-y-0 left-0 rounded-full bg-[#0FA34E]"
           initial={{ width: '0%' }}
           animate={{ width: `${pct}%` }}
-          transition={{ duration: 0.8, ease: 'easeOut', delay: index * 0.06 + 0.2 }}
+          transition={{ duration: 0.8, ease: 'easeOut', delay: index * 0.05 + 0.1 }}
         />
       </div>
 

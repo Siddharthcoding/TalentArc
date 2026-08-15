@@ -96,7 +96,7 @@ export default function SkillGapPanel({ skillDetails, keywordDetails }) {
       transition={{ delay: 0.3, duration: 0.5 }}
       className="space-y-6"
     >
-      <h3 className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+      <h3 className="font-mono text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.22em]">
         Skill & Keyword Gap Analysis
       </h3>
 
@@ -112,12 +112,12 @@ export default function SkillGapPanel({ skillDetails, keywordDetails }) {
             )}
 
             {matchedSkills.length > 0 && missingSkills.length > 0 && (
-              <div className="border-t border-zinc-100 dark:border-zinc-800" />
+              <div className="border-t soft-divider" />
             )}
 
             {missingSkills.length > 0 && (
               <SkillSection
-                title="Missing Skills — Click to Copy & Inject"
+                title="Missing Skills - Click to Copy & Inject"
                 skills={missingSkills}
                 matched={false}
               />
@@ -128,7 +128,7 @@ export default function SkillGapPanel({ skillDetails, keywordDetails }) {
         {keywordSection && (
           <>
             {missingSkills.length > 0 && (
-              <div className="border-t border-zinc-100 dark:border-zinc-800" />
+              <div className="border-t soft-divider" />
             )}
 
             {overlappingKeywords.length > 0 && (
@@ -140,7 +140,7 @@ export default function SkillGapPanel({ skillDetails, keywordDetails }) {
             )}
 
             {overlappingKeywords.length > 0 && missingKeywords.length > 0 && (
-              <div className="border-t border-zinc-100 dark:border-zinc-800" />
+              <div className="border-t soft-divider" />
             )}
 
             {missingKeywords.length > 0 && (

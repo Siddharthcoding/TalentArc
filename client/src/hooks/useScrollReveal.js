@@ -1,11 +1,10 @@
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import { useInView, useAnimation } from 'framer-motion';
-import { useEffect } from 'react';
 
-export function useScrollReveal(threshold = 0.2, once = true) {
+export function useScrollReveal(amount = 0.05, once = true) {
   const ref = useRef(null);
   const controls = useAnimation();
-  const isInView = useInView(ref, { threshold, once });
+  const isInView = useInView(ref, { amount, once });
 
   useEffect(() => {
     if (isInView) {
@@ -17,16 +16,23 @@ export function useScrollReveal(threshold = 0.2, once = true) {
 }
 
 export const fadeUpVariants = {
-  hidden: { opacity: 0, y: 40 },
-  visible: { opacity: 1, y: 0 },
+  hidden: { opacity: 0, y: 24 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.5,
+      ease: [0.22, 1, 0.36, 1]
+    }
+  },
 };
 
 export const staggerContainerVariants = {
   hidden: {},
   visible: {
     transition: {
-      staggerChildren: 0.12,
-      delayChildren: 0.1,
+      staggerChildren: 0.08,
+      delayChildren: 0.04,
     },
   },
 };

@@ -91,9 +91,15 @@ function resolveAssessmentTopics(inputType, inputValue) {
   }
 
   if (inputType === "resume") {
-    const topics = extractCommaSeparatedTopics(inputValue);
-    return topics.length ? topics : ["Software Development"];
+    // Strictly extract tech topics from the resume text or comma-separated list
+    const techTopics = extractTechTopicsFromText(inputValue);
+    if (techTopics.length) return techTopics.slice(0, 8);
+    const parsedComma = extractCommaSeparatedTopics(inputValue).filter(
+      (t) => !/^(name|phone|email|gmail|yahoo|address|bhubaneswar|kiit|university|b\.tech|m\.tech|cgpa|gpa|percentage|roll|certif|coursera|udemy|intern|experience|projects?|education|summary|contact)$/i.test(t)
+    );
+    return parsedComma.length ? parsedComma : ["Data Structures", "Java", "SQL", "Software Development"];
   }
+
 
   return ["Technical Skills"];
 }
@@ -177,19 +183,32 @@ function parseJSONResponse(text) {
 }
 
 /**
- * Fetch questions from Hugging Face LLM using DeepSeek or Llama fallback
+ * Fetch questions from Hugging Face LLM in a single consolidated API call across all topics
  */
-async function generateQuestionsViaLLM(topic, difficulty, count = 5) {
+async function generateMultiTopicQuestionsViaLLM(topicPlan, difficulty, totalCount) {
   const config = getConfig();
   if (!config.token) {
     console.warn("[LLM] No HF_TOKEN found. Skipping LLM question generation.");
     return [];
   }
 
+  const topicDistribution = topicPlan
+    .map((p) => `- ${p.topic}: ${p.count} question${p.count > 1 ? "s" : ""}`)
+    .join("\n");
+
+  const topicList = topicPlan.map((p) => p.topic).join(", ");
+
   const prompt = `
-Generate exactly ${count} multiple choice questions (MCQ) for the topic "${topic}" with difficulty level "${difficulty}".
-Each question must have exactly 4 choices (options) and exactly one correct answer.
-Provide explanations for why the correct answer is right.
+Generate exactly ${totalCount} multiple choice questions (MCQ) for a technical placement assessment with difficulty level "${difficulty}".
+The questions must be distributed across the following technical topics:
+${topicDistribution}
+
+Each question must have:
+- Exactly 4 choices in "options" array
+- Exactly one 0-based integer index in "correct_option" (0, 1, 2, or 3)
+- A clear, educational explanation in "explanation"
+- "topic": exactly one of the requested topics (${topicList})
+- "difficulty": "${difficulty}"
 
 Respond ONLY with a valid JSON array of objects. Do not include markdown code block syntax (like \`\`\`json) or any conversational text. Use this exact format:
 [
@@ -199,7 +218,7 @@ Respond ONLY with a valid JSON array of objects. Do not include markdown code bl
     "correct_option": 0,
     "explanation": "Explanation text goes here...",
     "difficulty": "${difficulty}",
-    "topic": "${topic}"
+    "topic": "Topic Name"
   }
 ]
 `;
@@ -210,24 +229,25 @@ Respond ONLY with a valid JSON array of objects. Do not include markdown code bl
     FALLBACK_MODEL,
     "meta-llama/Meta-Llama-3-8B-Instruct"
   ];
+
   for (const modelName of models) {
     try {
-      console.log(`[LLM] Requesting ${count} questions from model: ${modelName}`);
+      console.log(`[LLM] Requesting ${totalCount} questions for topics [${topicList}] via single LLM call from model: ${modelName}`);
       const hf = new HfInference(config.token);
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 20000);
+      const timeoutId = setTimeout(() => controller.abort(), 25000);
 
       const response = await hf.chatCompletion({
         model: modelName,
         messages: [
           {
             role: "system",
-            content: "You are an expert technical interviewer. You construct highly accurate MCQ assessments. Always respond with raw JSON only.",
+            content: "You are an expert technical placement interviewer for engineering campus drives. You construct highly accurate MCQ assessments. Always respond with raw JSON only.",
           },
           { role: "user", content: prompt },
         ],
-        max_tokens: 2000,
-        temperature: 0.4,
+        max_tokens: 2800,
+        temperature: 0.35,
       });
 
       clearTimeout(timeoutId);
@@ -247,11 +267,12 @@ Respond ONLY with a valid JSON array of objects. Do not include markdown code bl
             q.correct_option <= 3
         );
         if (validated.length > 0) {
+          console.log(`[LLM] Successfully generated ${validated.length}/${totalCount} questions in 1 unified call.`);
           return validated;
         }
       }
     } catch (err) {
-      console.warn(`[LLM] Generation failed for model ${modelName}:`, err.message);
+      console.warn(`[LLM] Unified generation failed for model ${modelName}:`, err.message);
     }
   }
 
@@ -310,7 +331,7 @@ Respond with plain text only, no JSON, and no headers.
 }
 
 /**
- * Create a new assessment
+ * Create a new assessment using 1 consolidated LLM call for all topics
  */
 export async function createAssessment(userId, { inputType, inputValue, difficulty, questionCount, durationSeconds }) {
   const count = parseInt(questionCount, 10) || 10;
@@ -321,79 +342,83 @@ export async function createAssessment(userId, { inputType, inputValue, difficul
 
   console.log(`[Assessment] Creating assessment for topics: "${topic}" (${inputType}), difficulty: ${difficulty}, size: ${count}`);
 
-  const EXTERNAL_RATIO = 0.7; // 70% external, 30% DB fallback
-  let questions = [];
+  let collectedQuestions = [];
+  const neededPerTopic = new Map();
+  topicPlan.forEach((p) => neededPerTopic.set(p.topic, p.count));
 
+  // 1. Try to scrape or fetch from database cache first for each topic
   for (const plan of topicPlan) {
-    let topicQuestions = [];
-    const externalTarget = Math.max(1, Math.round(plan.count * EXTERNAL_RATIO));
+    try {
+      const fallbackQuestions = await loadTopicFallbackQuestions(plan.topic, plan.count);
+      if (fallbackQuestions && fallbackQuestions.length > 0) {
+        collectedQuestions = [...collectedQuestions, ...fallbackQuestions];
+        const remaining = Math.max(0, plan.count - fallbackQuestions.length);
+        neededPerTopic.set(plan.topic, remaining);
+      }
+    } catch (err) {
+      console.error(`[Assessment] Cache lookup failed for ${plan.topic}:`, err);
+    }
+  }
 
-    if (topicQuestions.length < externalTarget) {
-      const neededScrape = externalTarget - topicQuestions.length;
-      try {
-        const scraped = await runScraper(plan.topic, neededScrape);
-        if (scraped && scraped.length > 0) {
-          scraped.forEach((q) => {
-            q.difficulty = difficulty;
-            q.topic = q.topic || plan.topic;
-          });
-          topicQuestions = [...topicQuestions, ...scraped];
-          console.log(`[Assessment] Added ${scraped.length} scraped questions for ${plan.topic}`);
+  // 2. Compute total remaining questions needed across all topics
+  const remainingPlan = [];
+  let totalRemainingNeeded = 0;
+  for (const [top, needed] of neededPerTopic.entries()) {
+    if (needed > 0) {
+      remainingPlan.push({ topic: top, count: needed });
+      totalRemainingNeeded += needed;
+    }
+  }
+
+  // 3. Generate all remaining questions in 1 SINGLE unified LLM call
+  if (totalRemainingNeeded > 0) {
+    try {
+      const generated = await generateMultiTopicQuestionsViaLLM(
+        remainingPlan.length > 0 ? remainingPlan : topicPlan,
+        difficulty,
+        totalRemainingNeeded
+      );
+
+      if (generated && generated.length > 0) {
+        collectedQuestions = [...collectedQuestions, ...generated];
+
+        // Cache generated questions in questions_store for future instant retrieval
+        for (const q of generated) {
+          pool.query(
+            `INSERT INTO questions_store (topic, question_text, options, correct_option, explanation, difficulty)
+             VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING`,
+            [q.topic || topic, q.question_text, JSON.stringify(q.options), q.correct_option, q.explanation, q.difficulty || difficulty]
+          ).catch((e) => console.error("[Assessment] Failed to cache question:", e));
         }
-      } catch (err) {
-        console.error(`[Assessment] Error during scraping for ${plan.topic}:`, err);
       }
+    } catch (err) {
+      console.error("[Assessment] Single-call LLM generation error:", err);
     }
+  }
 
-    if (topicQuestions.length < plan.count) {
-      const neededLLM = plan.count - topicQuestions.length;
+  // 4. If still short of total count, fill from database
+  if (collectedQuestions.length < count) {
+    for (const plan of topicPlan) {
+      if (collectedQuestions.length >= count) break;
       try {
-        const generated = await generateQuestionsViaLLM(plan.topic, difficulty, neededLLM);
-        if (generated && generated.length > 0) {
-          topicQuestions = [...topicQuestions, ...generated];
-          console.log(`[Assessment] Added ${generated.length} generated questions for ${plan.topic}`);
-          for (const q of generated) {
-            pool.query(
-              `INSERT INTO questions_store (topic, question_text, options, correct_option, explanation, difficulty)
-               VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING`,
-              [q.topic || plan.topic, q.question_text, JSON.stringify(q.options), q.correct_option, q.explanation, q.difficulty]
-            ).catch((e) => console.error("[Assessment] Failed to cache generated question:", e));
-          }
-        }
-      } catch (err) {
-        console.error(`[Assessment] Error during LLM generation for ${plan.topic}:`, err);
-      }
+        const fallbacks = await loadTopicFallbackQuestions(plan.topic, count - collectedQuestions.length);
+        collectedQuestions = [...collectedQuestions, ...fallbacks];
+      } catch {}
     }
-
-    if (topicQuestions.length < plan.count) {
-      try {
-        const fallbackQuestions = await loadTopicFallbackQuestions(plan.topic, plan.count - topicQuestions.length);
-        topicQuestions = [...topicQuestions, ...fallbackQuestions];
-        console.log(`[Assessment] Pulled ${fallbackQuestions.length} topic-matched fallback questions for ${plan.topic}`);
-      } catch (err) {
-        console.error(`[Assessment] Topic fallback query failed for ${plan.topic}:`, err);
-      }
-    }
-
-    if (topicQuestions.length < plan.count) {
-      console.warn(`[Assessment] Could only create ${topicQuestions.length}/${plan.count} questions for ${plan.topic}; refusing unrelated global fallback.`);
-    }
-
-    questions = [...questions, ...topicQuestions.slice(0, plan.count)];
   }
 
   // Trim to exactly requested count
-  questions = questions.slice(0, count);
+  let finalQuestions = collectedQuestions.slice(0, count);
 
   // Assign temporary IDs where needed
-  questions = questions.map((q, idx) => ({
+  finalQuestions = finalQuestions.map((q, idx) => ({
     id: q.id || `temp-${idx}-${Date.now()}`,
     question_text: q.question_text,
     options: q.options,
     correct_option: q.correct_option,
     explanation: q.explanation,
-    difficulty: q.difficulty,
-    topic: q.topic,
+    difficulty: q.difficulty || difficulty,
+    topic: q.topic || topic,
   }));
 
   // Create assessment in DB
@@ -401,13 +426,13 @@ export async function createAssessment(userId, { inputType, inputValue, difficul
     `INSERT INTO assessments (user_id, topic, input_type, input_value, questions, duration_seconds, status)
      VALUES ($1, $2, $3, $4, $5, $6, 'active')
      RETURNING *`,
-    [userId, topic, inputType, inputValue, JSON.stringify(questions), timer]
+    [userId, topic, inputType, inputValue, JSON.stringify(finalQuestions), timer]
   );
 
   const assessment = rows[0];
 
   // Return assessment with censored questions (no correct answers)
-  const censoredQuestions = questions.map((q) => ({
+  const censoredQuestions = finalQuestions.map((q) => ({
     id: q.id,
     question_text: q.question_text,
     options: q.options,
@@ -424,6 +449,7 @@ export async function createAssessment(userId, { inputType, inputValue, difficul
     createdAt: assessment.created_at,
   };
 }
+
 
 /**
  * Submit answers and score the assessment

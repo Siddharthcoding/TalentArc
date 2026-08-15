@@ -1,80 +1,73 @@
 import { Link } from 'react-router-dom';
-import { Sparkles, Github, Twitter } from 'lucide-react';
+import { Sparkles, ShieldCheck } from 'lucide-react';
 
-const footerLinks = [
-  { href: '/features', label: 'Features' },
-  { href: '/pricing', label: 'Pricing' },
-  { href: '/dashboard', label: 'Dashboard' },
-];
+const KonarkWheel = ({ className = "w-10 h-10", color = "#F6E9D2" }) => (
+  <svg className={className} viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="100" cy="100" r="92" stroke={color} strokeWidth="6" strokeDasharray="12 6" />
+    <circle cx="100" cy="100" r="82" stroke={color} strokeWidth="4" />
+    <circle cx="100" cy="100" r="30" stroke={color} strokeWidth="5" fill="#0B7C3C" />
+    <circle cx="100" cy="100" r="14" fill={color} />
+    {Array.from({ length: 24 }).map((_, i) => {
+      const angle = (i * 360) / 24;
+      const isMajor = i % 3 === 0;
+      return (
+        <g key={i} transform={`rotate(${angle} 100 100)`}>
+          <line 
+            x1="100" 
+            y1="30" 
+            x2="100" 
+            y2="70" 
+            stroke={color} 
+            strokeWidth={isMajor ? "4" : "2"} 
+          />
+          {isMajor && (
+            <circle cx="100" cy="50" r="4" fill="#C6FF3D" stroke={color} strokeWidth="1.5" />
+          )}
+        </g>
+      );
+    })}
+  </svg>
+);
 
 export default function Footer() {
   return (
-    <footer className="border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50">
-      <div className="section-container py-12 md:py-16">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-          <div className="col-span-2 md:col-span-2">
-            <Link to="/" className="flex items-center gap-2 mb-4">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center">
-                <Sparkles className="w-3.5 h-3.5 text-white" />
-              </div>
-              <span className="text-lg font-bold tracking-tight text-zinc-900 dark:text-white">
-                Talent<span className="gradient-text">Arc</span>
+    <footer className="bg-[#0B7C3C] text-[#F6E9D2] mt-20 pt-12 pb-16 border-t-4 border-[#C6FF3D] relative overflow-hidden select-none">
+      <div className="absolute inset-0 pointer-events-none opacity-[0.06] font-mono text-xs text-[#C6FF3D] z-0">
+        <div className="absolute top-8 left-[5%] rotate-[-6deg]">O(log n)</div>
+        <div className="absolute top-20 right-[8%] rotate-[12deg]">T(n) = 2T(n/2) + O(n)</div>
+        <div className="absolute top-40 left-[25%] rotate-[-4deg]">SELECT * FROM KIIT_Placements;</div>
+      </div>
+
+      <div className="section-container relative z-10 space-y-8">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="flex items-center gap-3">
+            <KonarkWheel className="w-12 h-12" color="#F6E9D2" />
+            <div>
+              <span className="font-display font-black text-2xl text-[#F6E9D2] tracking-tight">
+                Kampus Ace
               </span>
-            </Link>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-sm">
-              AI-powered resume analysis and ATS optimization platform. Transform your resume
-              into a career catalyst.
-            </p>
-          </div>
-
-          <div>
-            <h3 className="text-xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-4">
-              Product
-            </h3>
-            <ul className="space-y-3">
-              {footerLinks.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    to={link.href}
-                    className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="text-xs font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-4">
-              Connect
-            </h3>
-            <div className="flex items-center gap-3">
-              <a
-                href="#"
-                className="p-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
-                aria-label="GitHub"
-              >
-                <Github className="w-4 h-4" />
-              </a>
-              <a
-                href="#"
-                className="p-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
-                aria-label="Twitter"
-              >
-                <Twitter className="w-4 h-4" />
-              </a>
+              <p className="text-xs text-[#C6FF3D] font-mono">
+                FirstClub for KIIT Placement Season
+              </p>
             </div>
+          </div>
+
+          <div className="flex flex-wrap gap-6 text-xs font-display font-bold text-[#F6E9D2]">
+            <Link to="/dashboard" className="hover:text-[#C6FF3D] transition-colors">ATS Checker</Link>
+            <Link to="/jd-matcher" className="hover:text-[#C6FF3D] transition-colors">JD Matcher</Link>
+            <Link to="/company-bank" className="hover:text-[#C6FF3D] transition-colors">Company Bank</Link>
+            <Link to="/assessment" className="hover:text-[#C6FF3D] transition-colors">Mock Assessment</Link>
+            <Link to="/resume-builder" className="hover:text-[#C6FF3D] transition-colors">Resume Builder</Link>
+            <Link to="/doubt-sessions" className="hover:text-[#C6FF3D] transition-colors">Doubt Sessions</Link>
           </div>
         </div>
 
-        <div className="mt-10 pt-6 border-t border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-zinc-400 dark:text-zinc-500">
-            &copy; {new Date().getFullYear()} TalentArc. All rights reserved.
-          </p>
-          <p className="text-xs text-zinc-400 dark:text-zinc-500">
-            Powered by AI &middot; Built for job seekers
-          </p>
+        <div className="pt-6 border-t border-[#F6E9D2]/20 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#F6E9D2]/80 font-mono">
+          <p>© {new Date().getFullYear()} Kampus Ace • KIIT University, Bhubaneswar, Odisha.</p>
+          <div className="flex items-center gap-2 text-[#C6FF3D]">
+            <ShieldCheck className="w-4 h-4" />
+            <span>100% Verified Recruiter Transcripts</span>
+          </div>
         </div>
       </div>
     </footer>

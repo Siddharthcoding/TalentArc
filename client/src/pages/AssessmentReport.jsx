@@ -10,11 +10,10 @@ function AssessmentReportContent() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  // State
   const [assessment, setAssessment] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [expandedQuestions, setExpandedQuestions] = useState({}); // questionId -> boolean
+  const [expandedQuestions, setExpandedQuestions] = useState({});
 
   const fetchReport = useCallback(async () => {
     setLoading(true);
@@ -33,9 +32,7 @@ function AssessmentReportContent() {
     }
   }, [id]);
 
-  useEffect(() => {
-    fetchReport();
-  }, [fetchReport]);
+  useEffect(() => { fetchReport(); }, [fetchReport]);
 
   const toggleQuestionExpand = (qId) => {
     setExpandedQuestions((prev) => ({ ...prev, [qId]: !prev[qId] }));
@@ -43,10 +40,10 @@ function AssessmentReportContent() {
 
   if (loading) {
     return (
-      <SectionWrapper className="min-h-[calc(100vh-4rem)] flex items-center justify-center pt-20">
+      <SectionWrapper className="min-h-[calc(100vh-4rem)] flex items-center justify-center pt-20" style={{ background: '#D7F27A' }}>
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
-          <p className="text-sm text-zinc-400">Compiling scorecard report...</p>
+          <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#0FA34E' }} />
+          <p className="text-sm font-semibold" style={{ color: '#0B7C3C' }}>Compiling scorecard report...</p>
         </div>
       </SectionWrapper>
     );
@@ -54,16 +51,18 @@ function AssessmentReportContent() {
 
   if (error || !assessment) {
     return (
-      <SectionWrapper className="min-h-[calc(100vh-4rem)] flex items-center justify-center pt-20">
-        <div className="glass-card p-6 flex flex-col items-center gap-4 text-center max-w-md">
-          <AlertCircle className="w-12 h-12 text-red-500" />
+      <SectionWrapper className="min-h-[calc(100vh-4rem)] flex items-center justify-center pt-20" style={{ background: '#D7F27A' }}>
+        <div className="p-6 flex flex-col items-center gap-4 text-center max-w-md rounded-3xl border-2 shadow-xl"
+          style={{ background: '#F6E9D2', borderColor: '#E1584A33' }}>
+          <AlertCircle className="w-12 h-12" style={{ color: '#E1584A' }} />
           <div>
-            <h2 className="text-lg font-bold text-zinc-900 dark:text-white">Could Not Fetch Report</h2>
-            <p className="text-sm text-zinc-500 mt-1">{error || 'Report is not available yet.'}</p>
+            <h2 className="text-lg font-bold" style={{ color: '#0B7C3C' }}>Could Not Fetch Report</h2>
+            <p className="text-sm mt-1" style={{ color: '#0B7C3C88' }}>{error || 'Report is not available yet.'}</p>
           </div>
           <button
             onClick={() => navigate('/assessment')}
-            className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-sm font-semibold rounded-xl text-white transition-colors"
+            className="px-5 py-2.5 font-bold rounded-full text-sm transition-all hover:opacity-90 shadow"
+            style={{ background: '#0FA34E', color: '#F6E9D2' }}
           >
             Go Back
           </button>
@@ -75,65 +74,65 @@ function AssessmentReportContent() {
   const { score = 0, maxScore = 0, report: reportDetails, status } = assessment;
   const percent = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
   const isFailedTerminated = status === 'terminated';
+  const scoreBg = isFailedTerminated ? '#E1584A' : percent >= 70 ? '#0FA34E' : percent >= 40 ? '#E8A33D' : '#E1584A';
 
   return (
-    <SectionWrapper className="min-h-screen pt-24 pb-16 relative overflow-hidden">
-      <div className="absolute inset-0 bg-grid pointer-events-none" />
-      <div className="absolute top-1/4 -left-32 w-96 h-96 bg-indigo-500/5 rounded-full blur-3xl" />
-      <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-violet-500/5 rounded-full blur-3xl" />
+    <SectionWrapper className="min-h-screen pt-32 pb-16 relative overflow-hidden" style={{ background: '#D7F27A' }}>
+      {/* Rangoli dot motif */}
+      <div className="absolute top-0 right-0 w-72 h-72 opacity-10 pointer-events-none"
+        style={{ backgroundImage: 'radial-gradient(circle, #0FA34E 2px, transparent 2px)', backgroundSize: '22px 22px' }} />
+      <div className="absolute bottom-0 left-0 w-48 h-48 opacity-10 pointer-events-none"
+        style={{ backgroundImage: 'radial-gradient(circle, #0B7C3C 2px, transparent 2px)', backgroundSize: '18px 18px' }} />
 
-      <div className="w-full max-w-4xl mx-auto relative z-10 space-y-8">
-        
-        {/* Scorecard Hero Panel */}
-        <div className="glass-card p-6 sm:p-8 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8">
-          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-violet-500 to-emerald-500" />
-          
+      <div className="w-full max-w-4xl mx-auto relative z-10 space-y-6">
+
+        {/* ── Hero Scorecard Panel ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-6 sm:p-8 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8 rounded-3xl border-2 shadow-xl"
+          style={{ background: '#F6E9D2', borderColor: '#0FA34E33' }}
+        >
+          {/* gradient top bar */}
+          <div className="absolute top-0 left-0 right-0 h-1.5 rounded-t-3xl"
+            style={{ background: 'linear-gradient(90deg, #0FA34E, #D7F27A 50%, #0FA34E)' }} />
+
           <div className="space-y-3 text-center md:text-left max-w-md">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200/50 dark:border-indigo-800/30 text-xs font-semibold text-indigo-600 dark:text-indigo-400">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-mono text-xs font-bold border"
+              style={{ background: '#DFF5E6', color: '#0FA34E', borderColor: '#0FA34E33' }}>
               <Award className="w-3.5 h-3.5" />
               <span>Assessment Completed</span>
             </div>
-            
-            <h1 className="text-3xl font-extrabold text-zinc-900 dark:text-white tracking-tight">
+
+            <h1 className="text-3xl font-extrabold tracking-tight"
+              style={{ fontFamily: '"Baloo 2", cursive', color: '#0B7C3C' }}>
               {assessment.topic}
             </h1>
-            
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
-              {isFailedTerminated 
-                ? "This test was terminated because the user exited full screen multiple times. A score of 0 is registered."
-                : `You scored ${score} out of ${maxScore} questions correctly. Below is a detailed performance assessment and recommended topics for review.`
-              }
+
+            <p className="text-sm font-medium leading-relaxed" style={{ color: '#0B7C3C88' }}>
+              {isFailedTerminated
+                ? 'This test was terminated because you exited full screen multiple times. A score of 0 is registered.'
+                : `You scored ${score} out of ${maxScore} questions correctly. Here is your full performance breakdown.`}
             </p>
 
-            <div className="flex flex-wrap items-center gap-4 justify-center md:justify-start pt-2">
-              <button
-                onClick={() => navigate('/assessment')}
-                className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 active:scale-98 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/25 transition-all text-xs"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                Take Another Assessment
-              </button>
-            </div>
+            <button
+              onClick={() => navigate('/assessment')}
+              className="inline-flex items-center gap-2 px-5 py-2.5 font-bold rounded-full text-sm transition-all hover:opacity-90 shadow-md"
+              style={{ background: '#0FA34E', color: '#D7F27A' }}
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              Take Another Assessment
+            </button>
           </div>
 
-          {/* Circle score indicator */}
+          {/* ── Score Ring ── */}
           <div className="flex flex-col items-center gap-2 shrink-0">
             <div className="relative w-36 h-36 flex items-center justify-center">
-              {/* Outer track */}
               <svg className="w-full h-full transform -rotate-90">
+                <circle cx="72" cy="72" r="62" strokeWidth="8" fill="transparent" stroke="#0FA34E22" />
                 <circle
-                  cx="72"
-                  cy="72"
-                  r="62"
-                  className="stroke-zinc-100 dark:stroke-zinc-800"
-                  strokeWidth="8"
-                  fill="transparent"
-                />
-                <circle
-                  cx="72"
-                  cy="72"
-                  r="62"
-                  className={isFailedTerminated ? "stroke-red-500" : percent >= 70 ? "stroke-emerald-500" : percent >= 40 ? "stroke-amber-500" : "stroke-red-500"}
+                  cx="72" cy="72" r="62"
+                  stroke={scoreBg}
                   strokeWidth="8"
                   fill="transparent"
                   strokeDasharray={2 * Math.PI * 62}
@@ -142,56 +141,55 @@ function AssessmentReportContent() {
                 />
               </svg>
               <div className="absolute flex flex-col items-center justify-center">
-                <span className="text-3xl font-black text-zinc-900 dark:text-white">
+                <span className="text-3xl font-black" style={{ color: '#0B7C3C', fontFamily: '"Baloo 2", cursive' }}>
                   {isFailedTerminated ? '0' : percent}%
                 </span>
-                <span className="text-[10px] uppercase font-bold tracking-widest text-zinc-400 mt-0.5">
-                  {isFailedTerminated ? '0' : score} / {maxScore} correct
+                <span className="text-[10px] uppercase font-bold tracking-widest" style={{ color: '#0B7C3C99' }}>
+                  {isFailedTerminated ? '0' : score} / {maxScore}
                 </span>
               </div>
             </div>
-            {isFailedTerminated ? (
-              <span className="text-xs font-bold text-red-500 bg-red-500/10 px-2 py-0.5 rounded border border-red-500/20">Terminated</span>
-            ) : percent >= 70 ? (
-              <span className="text-xs font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">Strong Profile</span>
-            ) : percent >= 40 ? (
-              <span className="text-xs font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">Needs Practice</span>
-            ) : (
-              <span className="text-xs font-bold text-red-500 bg-red-500/10 px-2 py-0.5 rounded border border-red-500/20">Critical Attention</span>
-            )}
+            <span className="text-xs font-bold px-3 py-1 rounded-full border"
+              style={{ background: `${scoreBg}18`, color: scoreBg, borderColor: `${scoreBg}44` }}>
+              {isFailedTerminated ? 'Terminated' : percent >= 70 ? 'Strong Profile 🏆' : percent >= 40 ? 'Needs Practice 📚' : 'Critical Attention ⚠️'}
+            </span>
           </div>
-        </div>
+        </motion.div>
 
-        {/* Personalized feedback & Weak areas card */}
+        {/* ── Feedback & Weak Areas ── */}
         {reportDetails && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-2 glass-card p-6 flex flex-col justify-between">
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-indigo-500" />
-                  <h2 className="text-base font-extrabold text-zinc-900 dark:text-white">Weak Areas Evaluation</h2>
-                </div>
-                <p className="text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed italic bg-zinc-50 dark:bg-zinc-900/40 p-4 rounded-xl border border-zinc-100 dark:border-zinc-800">
-                  "{reportDetails.feedback || 'Focus on reviewing your incorrect answers to identify concepts that need reinforcement.'}"
-                </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="md:col-span-2 p-6 rounded-3xl border-2 shadow"
+              style={{ background: '#F6E9D2', borderColor: '#0FA34E22' }}>
+              <div className="flex items-center gap-2 mb-3">
+                <BookOpen className="w-4 h-4" style={{ color: '#0FA34E' }} />
+                <h2 className="font-bold text-sm uppercase tracking-wider"
+                  style={{ color: '#0B7C3C', fontFamily: '"Baloo 2", cursive' }}>
+                  Weak Areas Evaluation
+                </h2>
               </div>
+              <p className="text-sm leading-relaxed italic p-4 rounded-2xl border"
+                style={{ color: '#0B7C3C', background: '#DFF5E6', borderColor: '#0FA34E22' }}>
+                "{reportDetails.feedback || 'Focus on reviewing your incorrect answers to identify concepts that need reinforcement.'}"
+              </p>
             </div>
 
-            <div className="glass-card p-6">
-              <h2 className="text-base font-extrabold text-zinc-900 dark:text-white mb-3">Target Study Topics</h2>
-              {reportDetails.weakTopics && reportDetails.weakTopics.length > 0 ? (
+            <div className="p-6 rounded-3xl border-2 shadow" style={{ background: '#F6E9D2', borderColor: '#0FA34E22' }}>
+              <h2 className="font-bold text-sm uppercase tracking-wider mb-3"
+                style={{ color: '#0B7C3C', fontFamily: '"Baloo 2", cursive' }}>
+                Study Topics
+              </h2>
+              {reportDetails.weakTopics?.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
-                  {reportDetails.weakTopics.map((topic, index) => (
-                    <span
-                      key={index}
-                      className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 border border-red-200/40 dark:border-red-900/30"
-                    >
+                  {reportDetails.weakTopics.map((topic, i) => (
+                    <span key={i} className="px-2.5 py-1 rounded-full text-xs font-bold border"
+                      style={{ background: '#E1584A15', color: '#E1584A', borderColor: '#E1584A33' }}>
                       {topic}
                     </span>
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-zinc-400 dark:text-zinc-500 leading-relaxed">
+                <p className="text-xs font-medium" style={{ color: '#0B7C3C88' }}>
                   No critical weak areas detected! You demonstrated strong capability across all questions.
                 </p>
               )}
@@ -199,85 +197,80 @@ function AssessmentReportContent() {
           </div>
         )}
 
-        {/* Review Questions Section */}
+        {/* ── Question Breakdown ── */}
         <div className="space-y-4">
-          <h2 className="text-lg font-bold text-zinc-900 dark:text-white">Question Breakdown & Explanation</h2>
-          
+          <h2 className="font-bold text-lg" style={{ color: '#0B7C3C', fontFamily: '"Baloo 2", cursive' }}>
+            Question Breakdown & Explanation
+          </h2>
           <div className="space-y-3">
             {reportDetails?.answers?.map((q, idx) => {
               const isCorrect = q.isCorrect;
               const isExpanded = expandedQuestions[q.questionId];
-
               return (
                 <div
                   key={q.questionId}
-                  className={`glass-card overflow-hidden transition-all border ${
-                    isCorrect
-                      ? 'hover:border-emerald-500/30'
-                      : 'border-red-500/10 hover:border-red-500/25 bg-red-500/[0.005]'
-                  }`}
+                  className="overflow-hidden rounded-3xl border-2 shadow transition-all"
+                  style={{ background: '#F6E9D2', borderColor: isCorrect ? '#0FA34E33' : '#E1584A33' }}
                 >
-                  {/* Summary Bar */}
                   <button
                     onClick={() => toggleQuestionExpand(q.questionId)}
                     className="w-full flex items-center justify-between p-5 text-left gap-4"
                   >
                     <div className="flex items-center gap-3.5 min-w-0">
                       <div className="shrink-0">
-                        {isCorrect ? (
-                          <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                        ) : (
-                          <XCircle className="w-5 h-5 text-red-500" />
-                        )}
+                        {isCorrect
+                          ? <CheckCircle2 className="w-5 h-5" style={{ color: '#0FA34E' }} />
+                          : <XCircle className="w-5 h-5" style={{ color: '#E1584A' }} />}
                       </div>
                       <div className="min-w-0">
-                        <span className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">Question {idx + 1}</span>
-                        <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 truncate pr-6">
+                        <span className="text-[10px] uppercase font-bold tracking-wider" style={{ color: '#0B7C3C88' }}>
+                          Question {idx + 1}
+                        </span>
+                        <p className="text-sm font-semibold truncate pr-6" style={{ color: '#0B7C3C' }}>
                           {q.question_text}
                         </p>
                       </div>
                     </div>
-                    <div className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors">
+                    <div style={{ color: '#0B7C3C88' }}>
                       {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                     </div>
                   </button>
 
-                  {/* Expanded block */}
                   {isExpanded && (
-                    <div className="px-5 pb-5 border-t border-zinc-100 dark:border-zinc-800/80 pt-5 space-y-4 text-sm">
-                      <h3 className="font-bold text-zinc-900 dark:text-white">{q.question_text}</h3>
-                      
+                    <div className="px-5 pb-5 border-t pt-5 space-y-4 text-sm" style={{ borderColor: '#0FA34E22' }}>
+                      <h3 className="font-bold" style={{ color: '#0B7C3C' }}>{q.question_text}</h3>
+
                       {/* Options Grid */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                         {q.options.map((opt, oIdx) => {
                           const isOptionCorrect = oIdx === q.correctOption;
                           const isOptionSelected = oIdx === q.selectedOption;
-
                           return (
                             <div
                               key={oIdx}
-                              className={`p-3.5 rounded-xl border text-xs font-semibold flex items-center justify-between ${
-                                isOptionCorrect
-                                  ? 'border-emerald-500 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300'
-                                  : isOptionSelected
-                                    ? 'border-red-500 bg-red-500/10 text-red-800 dark:text-red-300'
-                                    : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400'
-                              }`}
+                              className="p-3.5 rounded-2xl border text-xs font-semibold flex items-center justify-between"
+                              style={{
+                                background: isOptionCorrect ? '#DFF5E6' : isOptionSelected ? '#E1584A12' : '#F6E9D2',
+                                borderColor: isOptionCorrect ? '#0FA34E' : isOptionSelected ? '#E1584A' : '#0FA34E22',
+                                color: isOptionCorrect ? '#0B7C3C' : isOptionSelected ? '#E1584A' : '#0B7C3C88',
+                              }}
                             >
                               <span>{opt}</span>
                               <div className="flex items-center gap-1.5 shrink-0 text-[10px] uppercase font-bold">
-                                {isOptionCorrect && <span className="text-emerald-500">Correct Choice</span>}
-                                {isOptionSelected && !isOptionCorrect && <span className="text-red-500">Your Selection</span>}
+                                {isOptionCorrect && <span style={{ color: '#0FA34E' }}>Correct ✓</span>}
+                                {isOptionSelected && !isOptionCorrect && <span style={{ color: '#E1584A' }}>Your Answer</span>}
                               </div>
                             </div>
                           );
                         })}
                       </div>
 
-                      {/* Explanation box */}
-                      <div className="p-4 bg-zinc-50 dark:bg-zinc-900/60 rounded-xl border border-zinc-100 dark:border-zinc-800 space-y-1">
-                        <span className="text-[10px] uppercase font-bold text-indigo-500 dark:text-indigo-400 block tracking-widest">Explanation</span>
-                        <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed font-medium">
+                      {/* Explanation */}
+                      <div className="p-4 rounded-2xl border space-y-1" style={{ background: '#DFF5E6', borderColor: '#0FA34E22' }}>
+                        <span className="text-[10px] uppercase font-bold block tracking-widest" style={{ color: '#0FA34E' }}>
+                          Explanation
+                        </span>
+                        <p className="text-xs leading-relaxed font-medium" style={{ color: '#0B7C3C' }}>
                           {q.explanation}
                         </p>
                       </div>

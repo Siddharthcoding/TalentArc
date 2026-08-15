@@ -1,33 +1,32 @@
 import { motion } from 'framer-motion';
-import { FileText, BarChart3, Gauge, MessageSquare } from 'lucide-react';
-import GlassCard from '@/components/ui/GlassCard';
+import { BarChart3, FileText, Gauge, MessageSquare, ShieldCheck, Target, Users, Sliders } from 'lucide-react';
 import SectionWrapper from '@/components/ui/SectionWrapper';
 import { useScrollReveal, staggerContainerVariants, fadeUpVariants } from '@/hooks/useScrollReveal';
 
 const features = [
   {
     icon: FileText,
-    title: 'Multi-Format Extraction',
+    title: 'Multi-Format ATS Extraction',
     description:
-      'Seamlessly parse PDF and DOCX resumes with precision. Our engine preserves structure, formatting, and embedded metadata.',
+      'Seamlessly parse PDF and DOCX resumes with precision. Our engine preserves structure, section headers, and embedded keywords.',
   },
   {
     icon: BarChart3,
-    title: 'Multi-Layer ATS Analysis',
+    title: '9-Layer Placement Analysis',
     description:
-      'Five specialized analyzers evaluate formatting, contact info, completeness, style, and keyword optimization in parallel.',
+      'Evaluate formatting, contact info, completeness, tone, action verbs, and recruiter keyword optimization in parallel.',
   },
   {
     icon: Gauge,
-    title: 'Sub-Category Scoring',
+    title: 'Recruiter Gauge Scoring',
     description:
-      'Granular scores across 9 weighted dimensions — from formatting to ATS compatibility — so you know exactly where to improve.',
+      'Granular subscores across 9 weighted dimensions calibrated against campus placement cutoffs.',
   },
   {
     icon: MessageSquare,
     title: 'Instant Actionable Feedback',
     description:
-      'LLM-powered narrative feedback with prioritized action items. Know what you did well and exactly what to fix.',
+      'Personalized feedback with prioritized action items so you know exactly what to fix before drive day.',
   },
 ];
 
@@ -35,7 +34,7 @@ export default function Features() {
   const { ref, controls } = useScrollReveal(0.1);
 
   return (
-    <SectionWrapper id="features">
+    <SectionWrapper id="features" style={{ background: '#D7F27A' }}>
       <motion.div
         ref={ref}
         variants={staggerContainerVariants}
@@ -43,12 +42,17 @@ export default function Features() {
         animate={controls}
         className="text-center mb-16"
       >
-        <motion.h2 variants={fadeUpVariants} className="text-3xl md:text-4xl font-bold tracking-tight">
-          Everything You Need to{' '}
-          <span className="gradient-text">Optimize Your Resume</span>
+        <motion.div variants={fadeUpVariants} className="inline-flex items-center gap-1.5 bg-[#F6E9D2] text-[#0FA34E] font-mono text-xs font-bold px-3.5 py-1 rounded-full border border-[#0FA34E]/20 shadow-sm mb-3">
+          <ShieldCheck className="w-3.5 h-3.5" />
+          <span>KIIT PLACEMENT CAPABILITIES</span>
+        </motion.div>
+        
+        <motion.h2 variants={fadeUpVariants} className="font-display text-4xl sm:text-6xl font-extrabold text-[#0FA34E] tracking-tight">
+          Everything You Need to Ace Placement Season
         </motion.h2>
-        <motion.p variants={fadeUpVariants} className="mt-4 text-lg text-zinc-500 dark:text-zinc-400 max-w-2xl mx-auto">
-          From parsing to scoring, TalentArc gives you comprehensive insights to beat the ATS.
+        
+        <motion.p variants={fadeUpVariants} className="mt-4 text-base font-medium text-[#0B7C3C] max-w-2xl mx-auto">
+          From ATS scoring to verified company round transcripts, Kampus Ace provides full end-to-end guidance.
         </motion.p>
       </motion.div>
 
@@ -61,17 +65,19 @@ export default function Features() {
       >
         {features.map((feature) => (
           <motion.div key={feature.title} variants={fadeUpVariants}>
-            <GlassCard className="h-full group cursor-default">
-              <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300">
-                <feature.icon className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+            <div className="bg-[#F6E9D2] p-6 rounded-3xl border-2 border-[#0FA34E]/20 shadow-md hover:shadow-xl transition-all h-full flex flex-col justify-between group">
+              <div>
+                <div className="w-12 h-12 rounded-2xl bg-[#0FA34E] text-[#C6FF3D] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-sm">
+                  <feature.icon className="w-6 h-6" />
+                </div>
+                <h3 className="font-display font-extrabold text-lg text-[#0FA34E] mb-2">
+                  {feature.title}
+                </h3>
+                <p className="text-xs sm:text-sm text-[#0B7C3C] leading-relaxed font-medium">
+                  {feature.description}
+                </p>
               </div>
-              <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-2">
-                {feature.title}
-              </h3>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                {feature.description}
-              </p>
-            </GlassCard>
+            </div>
           </motion.div>
         ))}
       </motion.div>

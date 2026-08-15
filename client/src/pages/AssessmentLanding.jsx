@@ -1,90 +1,135 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, FileText, Briefcase, Code, Terminal, Settings, AlertCircle, Loader2, Play } from 'lucide-react';
+import {
+  Sparkles,
+  FileText,
+  Briefcase,
+  Code,
+  Terminal,
+  AlertCircle,
+  Loader2,
+  Play,
+  UploadCloud,
+  CheckCircle2,
+  History,
+  FileCode,
+  Tag,
+  X
+} from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { createAssessment, parseResumeForAssessment } from '@/services/api';
-import AnimatedButton from '@/components/ui/AnimatedButton';
-import SectionWrapper from '@/components/ui/SectionWrapper';
-import ErrorBoundary from '@/components/ui/ErrorBoundary';
-import Dropzone from '@/components/upload/Dropzone';
+import { createAssessment, parseResumeForAssessment, getReports } from '@/services/api';
 
 const MODES = [
-  { key: 'skill', label: 'Specific Skill', icon: Code, description: 'Test yourself on a target technology like React, Python, or SQL.' },
-  { key: 'job_role', label: 'Job Role', icon: Terminal, description: 'Simulate a general interview for a role like Frontend Engineer.' },
-  { key: 'job_description', label: 'Job Description', icon: Briefcase, description: 'Paste a description to generate questions matched to the job.' },
-  { key: 'resume', label: 'Resume Profile', icon: FileText, description: 'Assess skills derived automatically from your uploaded resume.' },
+  { key: 'skill', label: 'Specific Skill(s)', icon: Code, description: 'Test on React, Java, SQL, DSA (comma-separated).' },
+  { key: 'job_role', label: 'Company Job Role', icon: Terminal, description: 'Simulate HighRadius, Deloitte, or Microsoft SDE interviews.' },
+  { key: 'job_description', label: 'Job Description', icon: Briefcase, description: 'Paste a recruiter JD to extract required skills.' },
+  { key: 'resume', label: 'Resume Profile', icon: FileText, description: 'Auto-extract skills & projects from your uploaded resume.' },
 ];
 
-const DIFFICULTY_PRESETS = {
-  Easy: { count: 5, time: 5 },
-  Medium: { count: 10, time: 10 },
-  Hard: { count: 15, time: 15 },
-};
-
-function AssessmentLandingContent() {
+export default function AssessmentLanding() {
   const { isAuthenticated, login } = useAuth();
   const navigate = useNavigate();
+  const fileInputRef = useRef(null);
 
-  // Mode & Inputs
   const [activeMode, setActiveMode] = useState('skill');
-  const [skillInput, setSkillInput] = useState('');
-  const [roleInput, setRoleInput] = useState('');
+  const [skillInput, setSkillInput] = useState('Data Structures, Java, SQL');
+  const [roleInput, setRoleInput] = useState('HighRadius SDE Trainee');
   const [jdInput, setJdInput] = useState('');
-  const [resumeText, setResumeText] = useState('');
+  
+  // Resume Mode State
   const [resumeFile, setResumeFile] = useState(null);
-  const [resumeSkills, setResumeSkills] = useState('');  // comma-separated skills used as topic
+  const [resumeParsedData, setResumeParsedData] = useState(null);
+  const [resumeParsing, setResumeParsing] = useState(false);
+  const [resumeTextInput, setResumeTextInput] = useState('');
+  const [extractedSkills, setExtractedSkills] = useState([]);
+  const [savedReports, setSavedReports] = useState([]);
+  const [loadingReports, setLoadingReports] = useState(false);
+  const [selectedReportId, setSelectedReportId] = useState('');
 
-  // Settings
+  // Assessment Settings
   const [difficulty, setDifficulty] = useState('Medium');
   const [questionCount, setQuestionCount] = useState(10);
   const [timeLimitMinutes, setTimeLimitMinutes] = useState(10);
-  const [isCustomSettings, setIsCustomSettings] = useState(false);
-
-  // Status
   const [loading, setLoading] = useState(false);
-  const [parsingResume, setParsingResume] = useState(false);
   const [error, setError] = useState(null);
 
-  // Adjust default numbers when difficulty changes
+  // Load saved resume reports if user is signed in
   useEffect(() => {
-    if (!isCustomSettings) {
-      const preset = DIFFICULTY_PRESETS[difficulty];
-      setQuestionCount(preset.count);
-      setTimeLimitMinutes(preset.time);
+    if (isAuthenticated) {
+      setLoadingReports(true);
+      getReports()
+        .then((res) => {
+          if (res?.success && Array.isArray(res.data)) {
+            setSavedReports(res.data.filter((r) => r.file_name));
+          }
+        })
+        .catch(() => {})
+        .finally(() => setLoadingReports(false));
     }
-  }, [difficulty, isCustomSettings]);
+  }, [isAuthenticated]);
 
-  // Handle Resume File Upload & Parsing
-  const handleResumeSelect = useCallback(async (file) => {
+  const handleFileUpload = async (file) => {
+    if (!file) return;
     setResumeFile(file);
-    setParsingResume(true);
+    setResumeParsing(true);
     setError(null);
     try {
-      // Use lightweight parser — no LLM call, just text extraction + structured parsing
-      const result = await parseResumeForAssessment(file);
-
-      const text = result.normalizedText || result.rawText || '';
-      if (!text || text.trim().length < 20) {
-        throw new Error('Could not extract readable text from this resume. Please try a different file.');
+      const data = await parseResumeForAssessment(file);
+      setResumeParsedData(data);
+      
+      // Extract strictly technical skills from structured parser
+      let skills = [];
+      if (Array.isArray(data.structured?.skills?.all) && data.structured.skills.all.length > 0) {
+        skills = data.structured.skills.all;
+      } else if (data.structured?.skills?.categories) {
+        skills = Object.values(data.structured.skills.categories).flat();
+      } else if (Array.isArray(data.structured?.skills)) {
+        skills = data.structured.skills;
       }
-      setResumeText(text);
 
-      // Extract skills list for use as the assessment topic
-      const structured = result.structured || {};
-      // skills parser returns { all: [...], categories: {...} }
-      const skillsAll = structured.skills?.all || [];
-      const topSkills = skillsAll.slice(0, 8).join(', ');
-      setResumeSkills(topSkills || 'Software Development');
+      // Filter and clean skills (removing any non-skill noise)
+      const cleanSkills = Array.from(new Set(skills))
+        .map((s) => String(s).trim())
+        .filter((s) => s.length > 1 && !/^(and|etc|skills|technical|proficient|knowledge|good|experience|summary|contact)$/i.test(s));
+
+      setExtractedSkills(cleanSkills.slice(0, 15));
+      setResumeTextInput(cleanSkills.join(', '));
     } catch (err) {
-      setError(err?.message || 'Failed to parse resume file. Please try a PDF or DOCX file.');
-      setResumeFile(null);
-      setResumeText('');
-      setResumeSkills('');
+      setError(err?.message || 'Failed to parse uploaded resume. You can enter your skills below.');
     } finally {
-      setParsingResume(false);
+      setResumeParsing(false);
     }
-  }, []);
+  };
+
+  const handleSelectReport = (reportId) => {
+    setSelectedReportId(reportId);
+    const report = savedReports.find((r) => r.id === reportId);
+    if (report) {
+      let skills = [];
+      if (Array.isArray(report.parsed_data?.skills?.all)) {
+        skills = report.parsed_data.skills.all;
+      } else if (report.parsed_data?.skills?.categories) {
+        skills = Object.values(report.parsed_data.skills.categories).flat();
+      } else if (Array.isArray(report.extracted_skills)) {
+        skills = report.extracted_skills;
+      } else if (Array.isArray(report.skills)) {
+        skills = report.skills;
+      }
+
+      const cleanSkills = Array.from(new Set(skills))
+        .map((s) => (typeof s === 'string' ? s.trim() : (s?.name || '')))
+        .filter((s) => s.length > 1 && !/^(and|etc|skills|technical|summary|contact)$/i.test(s));
+
+      setExtractedSkills(cleanSkills.slice(0, 15));
+      setResumeTextInput(cleanSkills.join(', '));
+    }
+  };
+
+
+  const removeSkill = (skillToRemove) => {
+    setExtractedSkills((prev) => prev.filter((s) => s !== skillToRemove));
+  };
 
   const handleStart = async () => {
     if (!isAuthenticated) {
@@ -98,39 +143,34 @@ function AssessmentLandingContent() {
     let inputValue = '';
     if (activeMode === 'skill') {
       inputValue = skillInput.trim();
-      if (!inputValue) {
-        setError('Please enter a specific skill name.');
-        setLoading(false);
-        return;
-      }
     } else if (activeMode === 'job_role') {
       inputValue = roleInput.trim();
-      if (!inputValue) {
-        setError('Please enter a target job role.');
-        setLoading(false);
-        return;
-      }
     } else if (activeMode === 'job_description') {
       inputValue = jdInput.trim();
-      if (!inputValue) {
-        setError('Please paste a job description.');
-        setLoading(false);
-        return;
-      }
     } else if (activeMode === 'resume') {
-      // Use top skills as topic; fall back to text snippet if no skills found
-      inputValue = resumeSkills || resumeText.slice(0, 200);
-      if (!resumeText) {
-        setError('Please upload and parse your resume first.');
-        setLoading(false);
-        return;
+      if (extractedSkills.length > 0) {
+        inputValue = extractedSkills.join(', ');
+      } else if (resumeTextInput.trim()) {
+        inputValue = resumeTextInput.trim();
+      } else if (resumeFile?.name) {
+        inputValue = resumeFile.name.replace(/\.[^/.]+$/, '');
       }
+    }
+
+    if (!inputValue || !inputValue.trim()) {
+      if (activeMode === 'resume') {
+        setError('Please upload a resume file or enter your technical skills.');
+      } else {
+        setError('Please enter target topics, skills, or job details.');
+      }
+      setLoading(false);
+      return;
     }
 
     try {
       const res = await createAssessment({
         inputType: activeMode,
-        inputValue,
+        inputValue: inputValue.trim(),
         difficulty,
         questionCount,
         durationSeconds: timeLimitMinutes * 60,
@@ -142,303 +182,302 @@ function AssessmentLandingContent() {
         throw new Error(res.error || 'Failed to start assessment');
       }
     } catch (err) {
-      setError(err?.message || 'An error occurred while generating your assessment. Please check Hugging Face server configuration.');
+      setError(err?.message || 'Failed to generate assessment session.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <SectionWrapper className="min-h-screen pt-24 pb-16 relative overflow-hidden">
-      <div className="absolute inset-0 bg-grid pointer-events-none" />
-      <div className="absolute top-1/4 -left-32 w-96 h-96 bg-indigo-500/5 rounded-full blur-3xl" />
-      <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-violet-500/5 rounded-full blur-3xl" />
-
-      <div className="w-full max-w-5xl mx-auto relative z-10">
-        {/* Title */}
-        <div className="text-center max-w-2xl mx-auto mb-10">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200/50 dark:border-indigo-800/30 mb-4"
-          >
-            <Sparkles className="w-4 h-4 text-indigo-500 animate-pulse" />
-            <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">Mock Timed Assessment Portal</span>
-          </motion.div>
-          <h1 className="text-4xl font-extrabold text-zinc-900 dark:text-white sm:text-5xl tracking-tight leading-none mb-3">
-            Test Your Knowledge
-          </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Generate custom AI-powered multiple choice evaluations from your profile, JD or a custom topic, and test yourself under interview-simulate conditions.
-          </p>
+    <div className="section-container py-24 space-y-8 text-left max-w-5xl mx-auto">
+      <div>
+        <div className="inline-block bg-[#0FA34E] text-[#C6FF3D] font-mono text-xs font-black px-3.5 py-1 rounded-full uppercase mb-2 shadow">
+          ★ PROCTORED AI MOCK ASSESSMENT
         </div>
-
-        {error && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-8 p-4 bg-red-50 dark:bg-red-950/30 border border-red-200/50 dark:border-red-900/30 rounded-xl flex items-center gap-3 text-red-700 dark:text-red-400 text-sm max-w-3xl mx-auto"
-          >
-            <AlertCircle className="w-5 h-5 shrink-0" />
-            <span>{error}</span>
-          </motion.div>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Controls - Left 2 Columns */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Mode selection tabs */}
-            <div className="glass-card p-6">
-              <h2 className="text-lg font-bold text-zinc-900 dark:text-white mb-4">Choose Input Basis</h2>
-              <div className="grid grid-cols-2 gap-3 mb-6">
-                {MODES.map((mode) => {
-                  const Icon = mode.icon;
-                  const isActive = activeMode === mode.key;
-                  return (
-                    <button
-                      key={mode.key}
-                      onClick={() => { setActiveMode(mode.key); setError(null); }}
-                      className={`flex flex-col items-start text-left p-4 rounded-xl border transition-all ${
-                        isActive
-                          ? 'border-indigo-500 bg-indigo-50/40 dark:bg-indigo-950/20 shadow-sm'
-                          : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50/50 dark:hover:bg-zinc-900/50'
-                      }`}
-                    >
-                      <div className={`p-2 rounded-lg mb-3 ${isActive ? 'bg-indigo-500 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400'}`}>
-                        <Icon className="w-4 h-4" />
-                      </div>
-                      <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 mb-1">{mode.label}</span>
-                      <span className="text-xs text-zinc-400 dark:text-zinc-500 line-clamp-2 leading-relaxed">{mode.description}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Dynamic input area based on mode */}
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={activeMode}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.15 }}
-                >
-                  {activeMode === 'skill' && (
-                    <div className="space-y-2">
-                      <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Skill Name</label>
-                      <input
-                        type="text"
-                        value={skillInput}
-                        onChange={(e) => setSkillInput(e.target.value)}
-                        placeholder="e.g. React, Python Scripting, SQL Join, AWS DevOps"
-                        className="w-full px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 text-zinc-900 dark:text-white text-sm focus:border-indigo-500 focus:outline-none transition-colors"
-                      />
-                    </div>
-                  )}
-
-                  {activeMode === 'job_role' && (
-                    <div className="space-y-2">
-                      <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Target Job Role</label>
-                      <input
-                        type="text"
-                        value={roleInput}
-                        onChange={(e) => setRoleInput(e.target.value)}
-                        placeholder="e.g. Senior Frontend Engineer, Junior Data Scientist"
-                        className="w-full px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 text-zinc-900 dark:text-white text-sm focus:border-indigo-500 focus:outline-none transition-colors"
-                      />
-                    </div>
-                  )}
-
-                  {activeMode === 'job_description' && (
-                    <div className="space-y-2">
-                      <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Job Description Details</label>
-                      <textarea
-                        rows={6}
-                        value={jdInput}
-                        onChange={(e) => setJdInput(e.target.value)}
-                        placeholder="Paste full job description requirements here..."
-                        className="w-full px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 text-zinc-900 dark:text-white text-sm focus:border-indigo-500 focus:outline-none transition-colors resize-none"
-                      />
-                    </div>
-                  )}
-
-                  {activeMode === 'resume' && (
-                    <div className="space-y-4">
-                      <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Upload Resume (PDF/DOCX)</label>
-                      {parsingResume ? (
-                        <div className="border border-dashed border-zinc-300 dark:border-zinc-700 rounded-xl p-8 flex flex-col items-center justify-center gap-3">
-                          <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
-                          <p className="text-sm text-zinc-500">Extracting text and matching credentials...</p>
-                        </div>
-                      ) : resumeText ? (
-                        <div className="p-4 bg-emerald-50/50 dark:bg-emerald-950/10 border border-emerald-200/50 dark:border-emerald-900/35 rounded-xl flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 bg-emerald-500 text-white rounded-lg">
-                              <FileText className="w-5 h-5" />
-                            </div>
-                            <div>
-                              <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 truncate max-w-xs">{resumeFile?.name || 'resume.pdf'}</p>
-                              <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Parsed · Skills detected: {resumeSkills || 'none'}</p>
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => { setResumeText(''); setResumeFile(null); setResumeSkills(''); }}
-                            className="text-xs text-zinc-400 hover:text-red-500 font-medium transition-colors"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      ) : (
-                        <Dropzone onFileSelect={handleResumeSelect} />
-                      )}
-                    </div>
-                  )}
-                </motion.div>
-              </AnimatePresence>
-            </div>
-          </div>
-
-          {/* Settings Panel - Right 1 Column */}
-          <div className="space-y-6">
-            <div className="glass-card p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Settings className="w-4 h-4 text-indigo-500" />
-                <h2 className="text-lg font-bold text-zinc-900 dark:text-white">Assessment Config</h2>
-              </div>
-
-              {/* Difficulty Preset */}
-              <div className="space-y-2 mb-6">
-                <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider block">Difficulty</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {['Easy', 'Medium', 'Hard'].map((diff) => {
-                    const isSel = difficulty === diff;
-                    return (
-                      <button
-                        key={diff}
-                        type="button"
-                        onClick={() => setDifficulty(diff)}
-                        className={`py-2 rounded-xl text-xs font-semibold border transition-all ${
-                          isSel
-                            ? 'bg-indigo-500 text-white border-indigo-500'
-                            : 'bg-white dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-700'
-                        }`}
-                      >
-                        {diff}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Toggle Custom parameters */}
-              <div className="flex items-center gap-2.5 mb-6">
-                <input
-                  type="checkbox"
-                  id="customSettings"
-                  checked={isCustomSettings}
-                  onChange={(e) => setIsCustomSettings(e.target.checked)}
-                  className="rounded border-zinc-300 dark:border-zinc-700 text-indigo-600 focus:ring-indigo-500 h-4 w-4"
-                />
-                <label htmlFor="customSettings" className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 cursor-pointer">
-                  Customize limit & timer manually
-                </label>
-              </div>
-
-              {/* Custom Sliders */}
-              <AnimatePresence>
-                {isCustomSettings && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    className="overflow-hidden space-y-4 mb-6"
-                  >
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-xs font-semibold text-zinc-500">
-                        <span>Questions Count</span>
-                        <span className="text-indigo-500">{questionCount} Qs</span>
-                      </div>
-                      <input
-                        type="range"
-                        min="5"
-                        max="20"
-                        step="5"
-                        value={questionCount}
-                        onChange={(e) => setQuestionCount(parseInt(e.target.value, 10))}
-                        className="w-full accent-indigo-500"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-xs font-semibold text-zinc-500">
-                        <span>Time Limit</span>
-                        <span className="text-indigo-500">{timeLimitMinutes} Mins</span>
-                      </div>
-                      <input
-                        type="range"
-                        min="5"
-                        max="20"
-                        step="5"
-                        value={timeLimitMinutes}
-                        onChange={(e) => setTimeLimitMinutes(parseInt(e.target.value, 10))}
-                        className="w-full accent-indigo-500"
-                      />
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Config Details */}
-              <div className="p-3 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800/80 rounded-xl space-y-1.5 mb-6 text-xs text-zinc-500 dark:text-zinc-400">
-                <div className="flex justify-between">
-                  <span>Questions:</span>
-                  <span className="font-semibold text-zinc-800 dark:text-zinc-200">{questionCount} MCQs</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Duration:</span>
-                  <span className="font-semibold text-zinc-800 dark:text-zinc-200">{timeLimitMinutes} minutes</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Target Difficulty:</span>
-                  <span className="font-semibold text-zinc-800 dark:text-zinc-200">{difficulty}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Anti-Cheat Monitor:</span>
-                  <span className="font-semibold text-indigo-500 dark:text-indigo-400">Fullscreen Lock</span>
-                </div>
-              </div>
-
-              {/* Start CTA */}
-              <AnimatedButton
-                variant="primary"
-                onClick={handleStart}
-                disabled={loading || parsingResume}
-                className="w-full text-sm !py-3 flex items-center justify-center gap-2 group"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin text-white" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Play className="w-4 h-4 fill-current text-white shrink-0 group-hover:scale-110 transition-transform" />
-                    {isAuthenticated ? 'Start Assessment' : 'Sign in to Start'}
-                  </>
-                )}
-              </AnimatedButton>
-            </div>
-          </div>
-        </div>
+        <h1 className="font-display text-4xl sm:text-6xl font-extrabold text-[#0FA34E]">
+          KIIT AI Mock Assessment Portal
+        </h1>
+        <p className="text-sm font-medium text-[#0B7C3C] mt-2">
+          Timed, proctored assessments generated dynamically across DSA, System Design, SQL, and CS Core topics.
+        </p>
       </div>
-    </SectionWrapper>
-  );
-}
 
-export default function AssessmentLanding() {
-  return (
-    <ErrorBoundary>
-      <AssessmentLandingContent />
-    </ErrorBoundary>
+      {error && (
+        <div className="p-4 bg-red-100 border-2 border-red-300 rounded-2xl text-red-800 text-xs font-mono font-bold flex items-center gap-2 shadow-sm">
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* Left 2 Cols: Mode Selection & Input Container */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="bg-[#F6E9D2] border-2 border-[#0FA34E]/30 rounded-3xl p-6 sm:p-8 shadow-xl space-y-5">
+            <h2 className="font-display font-extrabold text-xl text-[#0FA34E]">
+              1. Select Assessment Topic Basis
+            </h2>
+
+            {/* 4 Mode Buttons */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {MODES.map((mode) => {
+                const Icon = mode.icon;
+                const isActive = activeMode === mode.key;
+                return (
+                  <button
+                    key={mode.key}
+                    onClick={() => {
+                      setActiveMode(mode.key);
+                      setError(null);
+                    }}
+                    className={`p-4 rounded-2xl border-2 text-left transition-all ${
+                      isActive
+                        ? 'bg-[#0FA34E] text-[#F6E9D2] border-[#0FA34E] shadow-md'
+                        : 'bg-[#D7F27A] text-[#0FA34E] border-[#0FA34E]/20 hover:border-[#0FA34E]'
+                    }`}
+                  >
+                    <Icon className="w-5 h-5 mb-2" />
+                    <p className="font-display font-extrabold text-sm mb-1">{mode.label}</p>
+                    <p className="text-xs font-medium opacity-80 leading-snug">{mode.description}</p>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Dynamic Input Pane */}
+            <div className="pt-2">
+              
+              {/* MODE: Skill */}
+              {activeMode === 'skill' && (
+                <div className="space-y-2">
+                  <label className="block text-xs font-mono font-bold text-[#0FA34E] uppercase">
+                    Target Skills (Comma Separated)
+                  </label>
+                  <input
+                    type="text"
+                    value={skillInput}
+                    onChange={(e) => setSkillInput(e.target.value)}
+                    placeholder="e.g. Data Structures, React, Java, SQL, Operating Systems..."
+                    className="w-full px-4 py-3 bg-[#D7F27A] border-2 border-[#0FA34E]/30 rounded-2xl text-xs sm:text-sm font-bold text-[#0FA34E] focus:outline-none focus:border-[#0FA34E]"
+                  />
+                  <p className="text-[11px] text-[#0B7C3C88] font-medium">
+                    ⚡ Enter multiple skills separated by comma. All topics are compiled in a single optimized generation.
+                  </p>
+                </div>
+              )}
+
+              {/* MODE: Job Role */}
+              {activeMode === 'job_role' && (
+                <div className="space-y-2">
+                  <label className="block text-xs font-mono font-bold text-[#0FA34E] uppercase">
+                    Company / Target Placement Role
+                  </label>
+                  <input
+                    type="text"
+                    value={roleInput}
+                    onChange={(e) => setRoleInput(e.target.value)}
+                    placeholder="e.g. HighRadius SDE Trainee, Deloitte USI Analyst, Microsoft SDE-1..."
+                    className="w-full px-4 py-3 bg-[#D7F27A] border-2 border-[#0FA34E]/30 rounded-2xl text-xs sm:text-sm font-bold text-[#0FA34E] focus:outline-none focus:border-[#0FA34E]"
+                  />
+                </div>
+              )}
+
+              {/* MODE: Job Description */}
+              {activeMode === 'job_description' && (
+                <div className="space-y-2">
+                  <label className="block text-xs font-mono font-bold text-[#0FA34E] uppercase">
+                    Paste Job Description / Placement Circular
+                  </label>
+                  <textarea
+                    rows={5}
+                    value={jdInput}
+                    onChange={(e) => setJdInput(e.target.value)}
+                    placeholder="Paste the recruiter's JD or email requirements text here..."
+                    className="w-full px-4 py-3 bg-[#D7F27A] border-2 border-[#0FA34E]/30 rounded-2xl text-xs font-bold text-[#0FA34E] focus:outline-none focus:border-[#0FA34E]"
+                  />
+                </div>
+              )}
+
+              {/* MODE: Resume Profile */}
+              {activeMode === 'resume' && (
+                <div className="space-y-4">
+                  
+                  {/* File Upload Dropzone */}
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-2 border-dashed border-[#0FA34E]/40 hover:border-[#0FA34E] bg-[#D7F27A] p-6 rounded-2xl text-center cursor-pointer transition-all hover:bg-[#D7F27A]/80 space-y-2"
+                  >
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".pdf,.docx,.txt"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleFileUpload(file);
+                      }}
+                    />
+                    
+                    {resumeParsing ? (
+                      <div className="flex flex-col items-center gap-2 py-2">
+                        <Loader2 className="w-8 h-8 animate-spin text-[#0FA34E]" />
+                        <span className="font-display font-bold text-xs text-[#0FA34E]">
+                          Extracting skills and profile from resume...
+                        </span>
+                      </div>
+                    ) : resumeFile ? (
+                      <div className="flex items-center justify-center gap-3">
+                        <FileCode className="w-8 h-8 text-[#0FA34E]" />
+                        <div className="text-left">
+                          <p className="font-display font-extrabold text-sm text-[#0FA34E]">{resumeFile.name}</p>
+                          <p className="text-[10px] text-[#0B7C3C] font-mono">{(resumeFile.size / 1024).toFixed(1)} KB · Click to change file</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        <UploadCloud className="w-8 h-8 text-[#0FA34E] mx-auto mb-1" />
+                        <p className="font-display font-extrabold text-sm text-[#0FA34E]">
+                          Click to upload your Resume (PDF or DOCX)
+                        </p>
+                        <p className="text-[11px] text-[#0B7C3C]">
+                          We'll automatically extract your technical skills & build a tailored test.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Or select from past reports */}
+                  {savedReports.length > 0 && (
+                    <div className="p-3.5 rounded-2xl bg-[#DFF5E6] border border-[#0FA34E]/20 space-y-2">
+                      <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-[#0FA34E]">
+                        <History className="w-3.5 h-3.5" />
+                        <span>Or select from your past analyzed resumes:</span>
+                      </div>
+                      <select
+                        value={selectedReportId}
+                        onChange={(e) => handleSelectReport(e.target.value)}
+                        className="w-full px-3 py-2 bg-[#F6E9D2] border border-[#0FA34E]/30 rounded-xl text-xs font-bold text-[#0FA34E] outline-none"
+                      >
+                        <option value="">-- Choose a previously uploaded resume --</option>
+                        {savedReports.map((r) => (
+                          <option key={r.id} value={r.id}>
+                            {r.file_name} (ATS Score: {r.score || 'N/A'})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Extracted Skills Badges */}
+                  {extractedSkills.length > 0 && (
+                    <div className="space-y-2">
+                      <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-[#0FA34E] block">
+                        Detected Resume Skills ({extractedSkills.length}):
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {extractedSkills.map((sk) => (
+                          <span
+                            key={sk}
+                            className="inline-flex items-center gap-1.5 text-xs font-bold bg-[#0FA34E] text-[#F6E9D2] px-3 py-1 rounded-full shadow-sm"
+                          >
+                            <Tag className="w-3 h-3 text-[#C6FF3D]" />
+                            <span>{sk}</span>
+                            <button
+                              type="button"
+                              onClick={() => removeSkill(sk)}
+                              className="hover:text-red-300 transition-colors"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Fallback Text Input */}
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-mono font-bold text-[#0FA34E] uppercase">
+                      Or paste technical summary / skills:
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={resumeTextInput}
+                      onChange={(e) => setResumeTextInput(e.target.value)}
+                      placeholder="e.g. Proficient in Java, Spring Boot, React, SQL, Data Structures..."
+                      className="w-full px-4 py-2.5 bg-[#D7F27A] border-2 border-[#0FA34E]/30 rounded-2xl text-xs font-bold text-[#0FA34E] focus:outline-none focus:border-[#0FA34E]"
+                    />
+                  </div>
+
+                </div>
+              )}
+
+            </div>
+          </div>
+        </div>
+
+        {/* Right Col: Exam Settings & Action Button */}
+        <div className="space-y-6">
+          <div className="bg-[#F6E9D2] border-2 border-[#0FA34E]/30 rounded-3xl p-6 shadow-xl space-y-4">
+            <h2 className="font-display font-extrabold text-xl text-[#0FA34E]">
+              2. Exam Settings
+            </h2>
+
+            <div>
+              <label className="block text-xs font-mono font-bold text-[#0FA34E] mb-1.5">Difficulty Preset</label>
+              <div className="grid grid-cols-3 gap-2">
+                {['Easy', 'Medium', 'Hard'].map((diff) => (
+                  <button
+                    key={diff}
+                    onClick={() => setDifficulty(diff)}
+                    className={`py-2 rounded-xl text-xs font-bold transition-all ${
+                      difficulty === diff
+                        ? 'bg-[#0FA34E] text-[#F6E9D2] shadow'
+                        : 'bg-[#D7F27A] text-[#0FA34E] border border-[#0FA34E]/20'
+                    }`}
+                  >
+                    {diff}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-[#D7F27A] p-4 rounded-2xl border border-[#0FA34E]/20 space-y-2 text-xs font-mono font-bold text-[#0FA34E]">
+              <div className="flex justify-between">
+                <span>Questions:</span>
+                <span>{questionCount} MCQs</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Duration:</span>
+                <span>{timeLimitMinutes} Mins</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Proctoring:</span>
+                <span className="text-[#0B7C3C]">Enabled</span>
+              </div>
+            </div>
+
+            <button
+              onClick={handleStart}
+              disabled={loading || resumeParsing}
+              className="w-full bg-[#0FA34E] hover:bg-[#0B7C3C] text-[#F6E9D2] font-display font-extrabold text-sm py-4 rounded-full shadow-lg transition-all border-2 border-[#C6FF3D] flex items-center justify-center gap-2 disabled:opacity-60"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-[#C6FF3D]" />
+                  <span>Generating Assessment...</span>
+                </>
+              ) : (
+                <>
+                  <Play className="w-4 h-4 text-[#C6FF3D] fill-current" />
+                  <span>Launch Proctored Assessment</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
   );
 }

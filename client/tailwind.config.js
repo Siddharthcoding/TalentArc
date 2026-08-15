@@ -5,44 +5,37 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        display: ['"Baloo 2"', 'cursive', 'sans-serif'],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        cursive: ['Caveat', 'cursive'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },
       colors: {
-        surface: {
-          DEFAULT: '#ffffff',
-          dark: '#09090b',
-        },
-        primary: {
-          50: '#eef2ff',
-          100: '#e0e7ff',
-          200: '#c7d2fe',
-          300: '#a5b4fc',
-          400: '#818cf8',
-          500: '#6366f1',
-          600: '#4f46e5',
-          700: '#4338ca',
-          800: '#3730a3',
-          900: '#312e81',
-          950: '#1e1b4b',
-        },
+        'lime-field': '#D7F27A',
+        'lime-deep': '#C9EA5E',
+        'lime-neon': '#C6FF3D',
+        'cream': '#F6E9D2',
+        'kiit-green': '#0FA34E',
+        'deep-green': '#0B7C3C',
+        'soft-green': '#DFF5E6',
+        'marigold': '#E8A33D',
+        'vermillion': '#E1584A',
+        'magenta': '#C74A86',
       },
       animation: {
-        'gradient-x': 'gradient-x 8s ease infinite',
-        'pulse-soft': 'pulse-soft 3s ease-in-out infinite',
-        'float': 'float 6s ease-in-out infinite',
+        'spin-slow': 'spin 30s linear infinite',
+        'marquee': 'marquee 25s linear infinite',
+        'pulse-subtle': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'scan': 'scan 2s ease-in-out infinite alternate',
       },
       keyframes: {
-        'gradient-x': {
-          '0%, 100%': { backgroundPosition: '0% 50%' },
-          '50%': { backgroundPosition: '100% 50%' },
+        marquee: {
+          '0%': { transform: 'translateX(0%)' },
+          '100%': { transform: 'translateX(-50%)' },
         },
-        'pulse-soft': {
-          '0%, 100%': { opacity: 1 },
-          '50%': { opacity: 0.6 },
-        },
-        'float': {
-          '0%, 100%': { transform: 'translateY(0px)' },
-          '50%': { transform: 'translateY(-20px)' },
+        scan: {
+          '0%': { top: '0%' },
+          '100%': { top: '100%' },
         },
       },
     },

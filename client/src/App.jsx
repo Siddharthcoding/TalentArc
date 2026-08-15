@@ -15,16 +15,19 @@ import AssessmentReport from '@/pages/AssessmentReport';
 import CompanyBank from '@/pages/CompanyBank';
 import CompanyBankDetail from '@/pages/CompanyBankDetail';
 import CompanyBankAdmin from '@/pages/CompanyBankAdmin';
+import ResumeBuilder from '@/pages/ResumeBuilder';
+import DoubtSessions from '@/pages/DoubtSessions';
+import DoubtSessionAdmin from '@/pages/DoubtSessionAdmin';
 import { useAuth } from '@/context/AuthContext';
 import { claimReport } from '@/services/api';
 import GoogleButton from '@/components/auth/GoogleButton';
 
 function AuthLoading() {
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-white dark:bg-zinc-950">
-      <div className="flex flex-col items-center gap-4">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">Checking sign in...</p>
+    <div className="fixed inset-0 flex items-center justify-center bg-[#D7F27A]">
+      <div className="flex flex-col items-center gap-4 text-[#0FA34E]">
+        <Loader2 className="w-8 h-8 animate-spin text-[#0FA34E]" />
+        <p className="text-sm font-mono font-bold">Checking sign in...</p>
       </div>
     </div>
   );
@@ -37,16 +40,18 @@ function RequireAuth({ children }) {
   if (isAuthenticated) return children;
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 pt-20 bg-white dark:bg-zinc-950">
-      <div className="glass-card max-w-md w-full p-8 text-center">
-        <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 flex items-center justify-center mx-auto mb-4">
-          <Lock className="w-7 h-7 text-indigo-500" />
+    <div className="min-h-screen flex items-center justify-center px-4 pt-20 bg-[#D7F27A]">
+      <div className="bg-[#F6E9D2] border-2 border-[#0FA34E]/20 rounded-3xl max-w-md w-full p-8 text-center shadow-2xl space-y-4">
+        <div className="w-14 h-14 rounded-2xl bg-[#0FA34E] text-[#F6E9D2] flex items-center justify-center mx-auto mb-2 shadow">
+          <Lock className="w-7 h-7" />
         </div>
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">Sign in required</h1>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
-          Sign in to view company question banks and mock assessments.
+        <h1 className="font-display text-2xl font-extrabold text-[#0FA34E]">Sign in required</h1>
+        <p className="text-sm text-[#0B7C3C] leading-relaxed">
+          Sign in with your Google account to access company question banks, detailed ATS reports, and mock assessments.
         </p>
-        <GoogleButton onClick={login} />
+        <div className="pt-2 flex justify-center">
+          <GoogleButton onClick={login} />
+        </div>
       </div>
     </div>
   );
@@ -93,10 +98,10 @@ function AuthCallback() {
   }, [searchParams, navigate, setToken]);
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-white dark:bg-zinc-950">
-      <div className="flex flex-col items-center gap-4">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">{message}</p>
+    <div className="fixed inset-0 flex items-center justify-center bg-[#D7F27A]">
+      <div className="flex flex-col items-center gap-4 text-[#0FA34E]">
+        <Loader2 className="w-8 h-8 animate-spin" />
+        <p className="text-sm font-mono font-bold">{message}</p>
       </div>
     </div>
   );
@@ -118,6 +123,9 @@ export default function App() {
         <Route path="/company-bank" element={<RequireAuth><CompanyBank /></RequireAuth>} />
         <Route path="/company-bank/:id" element={<RequireAuth><CompanyBankDetail /></RequireAuth>} />
         <Route path="/admin/company-bank" element={<CompanyBankAdmin />} />
+        <Route path="/resume-builder" element={<ResumeBuilder />} />
+        <Route path="/doubt-sessions" element={<DoubtSessions />} />
+        <Route path="/doubt-admin" element={<RequireAuth><DoubtSessionAdmin /></RequireAuth>} />
         <Route path="/features" element={<FeaturesPage />} />
         <Route path="/pricing" element={<PricingPage />} />
       </Route>

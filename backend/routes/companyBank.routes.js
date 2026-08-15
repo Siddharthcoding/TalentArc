@@ -1,4 +1,4 @@
-﻿import { Router } from "express";
+import { Router } from "express";
 import isAuthenticated from "../middleware/isAuthenticated.js";
 import isAdmin from "../middleware/isAdmin.js";
 import {
@@ -11,6 +11,7 @@ import {
   addCompanyQuestion,
   updateCompanyQuestion,
   deleteCompanyQuestion,
+  contributeQuestion,
 } from "../controllers/companyBank.controller.js";
 
 const router = Router();
@@ -19,6 +20,7 @@ const router = Router();
 router.get("/companies", isAuthenticated, listCompanies);
 router.get("/companies/:id", isAuthenticated, getCompany);
 router.get("/companies/:id/questions", isAuthenticated, listCompanyQuestions);
+router.post("/contribute", isAuthenticated, contributeQuestion);
 
 // ─── Admin only ───────────────────────────────────────────────────────────────
 router.post("/companies", isAuthenticated, isAdmin, createCompany);

@@ -55,7 +55,7 @@ function DashboardContent() {
   const effectiveResult = cachedResult || result;
 
   return (
-    <SectionWrapper className="min-h-[calc(100vh-4rem)] flex items-center pt-20">
+    <SectionWrapper className="min-h-[calc(100vh-4rem)] flex items-center pt-28">
       <div className="w-full max-w-6xl mx-auto">
         <AnimatePresence mode="wait">
           {effectiveStatus === 'idle' && !cachedResult && (

@@ -1,28 +1,42 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ArrowRight, Sparkles, LogOut, FileText, Building2 } from 'lucide-react';
-import ThemeToggle from './ThemeToggle';
-import AnimatedButton from '@/components/ui/AnimatedButton';
+import {
+  Menu, X, LogOut, FileText, Building2, FileCheck,
+  Sliders, Target, Users, LayoutDashboard, Settings,
+} from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/utils/cn';
 
-const guestLinks = [
-  { href: '/', label: 'ATS Checker' },
-  { href: '/jd-matcher', label: 'JD Matcher' },
-  { href: '/assessment', label: 'Mock Assessment' },
-  { href: '/company-bank', label: 'Company Bank' },
-  { href: '/pricing', label: 'Pricing' },
-  { href: '/features', label: 'Docs' },
-];
+const ADMIN_EMAILS = ['23052921@kiit.ac.in'];
 
-const authLinks = [
-  { href: '/', label: 'ATS Checker' },
+const KonarkWheel = ({ className = 'w-7 h-7', color = '#0FA34E' }) => (
+  <svg className={className} viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="100" cy="100" r="92" stroke={color} strokeWidth="6" strokeDasharray="12 6" />
+    <circle cx="100" cy="100" r="82" stroke={color} strokeWidth="4" />
+    <circle cx="100" cy="100" r="30" stroke={color} strokeWidth="5" fill="#F6E9D2" />
+    <circle cx="100" cy="100" r="14" fill={color} />
+    {Array.from({ length: 24 }).map((_, i) => {
+      const angle = (i * 360) / 24;
+      const isMajor = i % 3 === 0;
+      return (
+        <g key={i} transform={`rotate(${angle} 100 100)`}>
+          <line x1="100" y1="30" x2="100" y2="70" stroke={color} strokeWidth={isMajor ? '4' : '2'} />
+          {isMajor && <circle cx="100" cy="50" r="4" fill="#C6FF3D" stroke={color} strokeWidth="1.5" />}
+        </g>
+      );
+    })}
+  </svg>
+);
+
+const navLinks = [
+  { href: '/', label: 'Home', exact: true },
+  { href: '/dashboard', label: 'ATS Checker' },
   { href: '/jd-matcher', label: 'JD Matcher' },
-  { href: '/assessment', label: 'Mock Assessment' },
   { href: '/company-bank', label: 'Company Bank' },
-  { href: '/reports', label: 'My Reports' },
-  { href: '/features', label: 'Docs' },
+  { href: '/assessment', label: 'Mock Tests' },
+  { href: '/resume-builder', label: 'Resume Builder' },
+  { href: '/doubt-sessions', label: 'Doubt Sessions' },
 ];
 
 function UserAvatar({ user, className }) {
@@ -39,19 +53,27 @@ function UserAvatar({ user, className }) {
     );
   }
   return (
-    <span className={className}>
+    <span className={className} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700 }}>
       {(user.displayName?.[0] || user.email?.[0] || 'U').toUpperCase()}
     </span>
   );
 }
 
 export default function Navbar() {
-  const [isScrolled, setIsScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [avatarOpen, setAvatarOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const avatarRef = useRef(null);
   const location = useLocation();
   const { isAuthenticated, loading, user, login, logout } = useAuth();
+
+  const isAdmin = user && ADMIN_EMAILS.includes(user.email?.toLowerCase());
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -63,235 +85,262 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const navLinks = isAuthenticated ? authLinks : guestLinks;
+  useEffect(() => { setMobileOpen(false); setAvatarOpen(false); }, [location]);
 
-  useEffect(() => {
-    const onScroll = () => setIsScrolled(window.scrollY > 10);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [location]);
+  const isActive = (link) =>
+    link.exact
+      ? location.pathname === link.href
+      : location.pathname === link.href || location.pathname.startsWith(link.href + '/');
 
   return (
     <header
-      className={cn(
-        'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
-        isScrolled
-          ? 'glass border-b border-zinc-200/50 dark:border-zinc-800/50 shadow-sm'
-          : 'bg-transparent'
-      )}
+      className="sticky top-0 left-0 right-0 z-50 transition-all duration-300"
+      style={{
+        background: scrolled ? 'rgba(215, 242, 122, 0.97)' : '#D7F27A',
+        borderBottom: scrolled ? '1.5px solid rgba(15, 163, 78, 0.18)' : '1.5px solid transparent',
+        backdropFilter: scrolled ? 'blur(12px)' : 'none',
+        boxShadow: scrolled ? '0 4px 24px rgba(11,124,60,0.10)' : 'none',
+      }}
     >
-      <nav className="section-container flex items-center justify-between h-16 md:h-20">
-        <Link to="/" className="flex items-center gap-2 group">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center">
-            <Sparkles className="w-4 h-4 text-white" />
+
+      <div className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 h-[60px] flex items-center justify-between gap-4">
+
+        {/* Brand */}
+        <Link to="/" className="flex items-center gap-2.5 shrink-0 group select-none">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 40, repeat: Infinity, ease: 'linear' }}
+            className="shrink-0"
+          >
+            <KonarkWheel className="w-8 h-8" color="#0FA34E" />
+          </motion.div>
+          <div className="leading-none">
+            <span
+              className="font-display text-[18px] sm:text-xl font-extrabold tracking-tight block"
+              style={{ color: '#0B7C3C', fontFamily: '"Baloo 2", cursive' }}
+            >
+              Kampus Ace
+            </span>
+            <span className="text-[9px] font-mono font-bold tracking-widest hidden sm:block" style={{ color: '#0FA34E' }}>
+              KIIT PLACEMENT HUB
+            </span>
           </div>
-          <span className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
-            Talent<span className="gradient-text">Arc</span>
+          <span
+            className="hidden sm:inline-flex items-center font-mono text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider"
+            style={{ background: '#0FA34E', color: '#C6FF3D' }}
+          >
+            '26
           </span>
         </Link>
 
-        <div className="hidden md:flex items-center gap-1">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              to={link.href}
-              className={cn(
-                'px-4 py-2 rounded-xl text-sm font-medium transition-colors',
-                link.href !== '/' && location.pathname.startsWith(link.href)
-                  ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50'
-                  : location.pathname === link.href
-                    ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50'
-                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-              )}
-            >
-              {link.label}
-            </Link>
-          ))}
-        </div>
+        {/* Desktop nav — pill group */}
+        <nav
+          className="hidden lg:flex items-center gap-0.5 p-1 rounded-full"
+          style={{ background: 'rgba(11,124,60,0.08)', border: '1.5px solid rgba(15,163,78,0.2)' }}
+        >
+          {navLinks.map((link) => {
+            const active = isActive(link);
+            return (
+              <Link
+                key={link.href}
+                to={link.href}
+                className={cn(
+                  'relative px-3.5 py-1.5 rounded-full text-[11.5px] font-bold transition-all select-none whitespace-nowrap',
+                  active ? 'text-[#F6E9D2]' : 'text-[#0B7C3C] hover:text-[#0FA34E] hover:bg-[#0FA34E12]'
+                )}
+              >
+                {active && (
+                  <motion.span
+                    layoutId="nav-pill-active"
+                    className="absolute inset-0 rounded-full"
+                    style={{ background: '#0FA34E' }}
+                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                  />
+                )}
+                <span className="relative z-10">{link.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
 
-        <div className="flex items-center gap-3">
-          <ThemeToggle />
-
+        {/* Right section */}
+        <div className="flex items-center gap-2 shrink-0">
           {loading ? (
-            <div className="w-9 h-9 rounded-full bg-zinc-100 dark:bg-zinc-800 animate-pulse" />
+            <div className="w-8 h-8 rounded-full animate-pulse" style={{ background: '#0FA34E22' }} />
           ) : isAuthenticated && user ? (
             <div className="relative" ref={avatarRef}>
               <button
                 onClick={() => setAvatarOpen(!avatarOpen)}
-                className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white text-sm font-semibold hover:shadow-lg hover:shadow-indigo-500/20 transition-shadow"
-                aria-label="User menu"
+                className="flex items-center gap-2 pl-3 pr-1.5 py-1.5 rounded-full transition-all hover:shadow-md"
+                style={{
+                  background: '#F6E9D2',
+                  border: '1.5px solid rgba(15,163,78,0.3)',
+                }}
               >
-                <UserAvatar
-                  user={user}
-                  className="w-full h-full rounded-full object-cover"
-                />
+                <span
+                  className="font-bold text-xs hidden sm:block max-w-[100px] truncate"
+                  style={{ color: '#0B7C3C', fontFamily: '"Baloo 2", cursive' }}
+                >
+                  {user.displayName?.split(' ')[0]}
+                </span>
+                <div
+                  className="w-7 h-7 rounded-full overflow-hidden flex items-center justify-center text-xs font-bold shadow-sm"
+                  style={{ background: '#0FA34E', color: '#F6E9D2' }}
+                >
+                  <UserAvatar user={user} className="w-full h-full object-cover" />
+                </div>
               </button>
 
               <AnimatePresence>
                 {avatarOpen && (
                   <motion.div
-                    initial={{ opacity: 0, y: -4, scale: 0.96 }}
+                    initial={{ opacity: 0, y: 6, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -4, scale: 0.96 }}
+                    exit={{ opacity: 0, y: 6, scale: 0.95 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute right-0 top-full mt-2 w-56 glass-card p-1.5 shadow-lg"
+                    className="absolute right-0 top-full mt-2 w-58 rounded-3xl p-2 shadow-2xl z-50 text-left"
+                    style={{ background: '#F6E9D2', border: '2px solid rgba(15,163,78,0.25)', minWidth: 220 }}
                   >
-                    <div className="px-3 py-2 border-b border-zinc-100 dark:border-zinc-800 mb-1">
-                      <p className="text-sm font-semibold text-zinc-900 dark:text-white truncate">
-                        {user.displayName || 'User'}
+                    {/* User identity */}
+                    <div className="px-3 py-2.5 border-b mb-1" style={{ borderColor: 'rgba(15,163,78,0.12)' }}>
+                      <p className="font-bold text-sm truncate" style={{ color: '#0FA34E', fontFamily: '"Baloo 2", cursive' }}>
+                        {user.displayName || 'Student'}
                       </p>
-                      <p className="text-xs text-zinc-400 dark:text-zinc-500 truncate">
+                      <p className="text-[11px] font-mono truncate" style={{ color: '#0B7C3C88' }}>
                         {user.email}
                       </p>
                     </div>
+
                     <Link
                       to="/reports"
                       onClick={() => setAvatarOpen(false)}
-                      className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-2xl text-xs font-bold transition-colors hover:bg-[#D7F27A]"
+                      style={{ color: '#0FA34E' }}
                     >
                       <FileText className="w-4 h-4" />
-                      My Reports
+                      My Saved Reports
                     </Link>
-                    {user.isAdmin && (
-                      <Link
-                        to="/admin/company-bank"
-                        onClick={() => setAvatarOpen(false)}
-                        className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-                      >
-                        <Building2 className="w-4 h-4" />
-                        Company Bank Admin
-                      </Link>
+
+                    {isAdmin && (
+                      <>
+                        <Link
+                          to="/admin/company-bank"
+                          onClick={() => setAvatarOpen(false)}
+                          className="flex items-center gap-2.5 px-3 py-2 rounded-2xl text-xs font-bold transition-colors hover:bg-[#D7F27A]"
+                          style={{ color: '#0FA34E' }}
+                        >
+                          <Building2 className="w-4 h-4" />
+                          Company Bank Admin
+                        </Link>
+                        <Link
+                          to="/doubt-admin"
+                          onClick={() => setAvatarOpen(false)}
+                          className="flex items-center gap-2.5 px-3 py-2 rounded-2xl text-xs font-bold transition-colors hover:bg-[#D7F27A]"
+                          style={{ color: '#0FA34E' }}
+                        >
+                          <Settings className="w-4 h-4" />
+                          Doubt Session Admin
+                        </Link>
+                      </>
                     )}
-                    <button
-                      onClick={() => { setAvatarOpen(false); logout(); }}
-                      className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm text-zinc-600 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      Sign Out
-                    </button>
+
+                    <div className="mt-1 pt-1 border-t" style={{ borderColor: 'rgba(15,163,78,0.12)' }}>
+                      <button
+                        onClick={() => { setAvatarOpen(false); logout(); }}
+                        className="flex items-center gap-2.5 w-full px-3 py-2 rounded-2xl text-xs font-bold transition-colors hover:bg-red-50"
+                        style={{ color: '#E1584A' }}
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Sign Out
+                      </button>
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
           ) : (
-            <>
-              <button
-                onClick={login}
-                className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-              >
-                <svg width="16" height="16" viewBox="0 0 48 48" aria-hidden="true">
-                  <path fill="#4285F4" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
-                  <path fill="#34A853" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
-                  <path fill="#FBBC05" d="M10.54 28.59A14.5 14.5 0 0 1 9.5 24c0-1.59.28-3.14.76-4.59l-7.98-6.19A23.99 23.99 0 0 0 0 24c0 3.77.87 7.35 2.56 10.56l7.98-5.97z" />
-                  <path fill="#EA4335" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 5.97C6.51 42.62 14.62 48 24 48z" />
-                </svg>
-                Sign in
-              </button>
-              <Link to="/dashboard" className="hidden md:block">
-                <AnimatedButton variant="primary" className="text-sm !px-5 !py-2.5 group">
-                  Get Started
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-                </AnimatedButton>
-              </Link>
-            </>
+            <button
+              onClick={login}
+              className="flex items-center gap-2 font-bold text-xs px-4 py-2 rounded-full transition-all hover:opacity-90 shadow-md"
+              style={{
+                background: '#0FA34E',
+                color: '#F6E9D2',
+                border: '1.5px solid rgba(198,255,61,0.4)',
+                fontFamily: '"Baloo 2", cursive',
+              }}
+            >
+              <svg width="13" height="13" viewBox="0 0 48 48" aria-hidden="true">
+                <path fill="#4285F4" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+                <path fill="#34A853" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+                <path fill="#FBBC05" d="M10.54 28.59A14.5 14.5 0 0 1 9.5 24c0-1.59.28-3.14.76-4.59l-7.98-6.19A23.99 23.99 0 0 0 0 24c0 3.77.87 7.35 2.56 10.56l7.98-5.97z" />
+                <path fill="#EA4335" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 5.97C6.51 42.62 14.62 48 24 48z" />
+              </svg>
+              Sign In
+            </button>
           )}
 
+          {/* Mobile burger */}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="md:hidden p-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
+            className="lg:hidden p-2 rounded-full transition-colors"
+            style={{ background: '#0FA34E22', color: '#0FA34E' }}
             aria-label="Toggle menu"
           >
             {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
-      </nav>
+      </div>
 
+      {/* Mobile Drawer */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden glass border-t border-zinc-200/50 dark:border-zinc-800/50 overflow-hidden"
+            className="lg:hidden overflow-hidden"
+            style={{ borderTop: '1.5px solid rgba(15,163,78,0.15)', background: '#F6E9D2' }}
           >
-            <div className="section-container py-4 space-y-2">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  to={link.href}
-                  className={cn(
-                    'block px-4 py-3 rounded-xl text-sm font-medium transition-colors',
-                    location.pathname === link.href || (link.href !== '/' && location.pathname.startsWith(link.href))
-                      ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50'
-                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-                  )}
-                >
-                  {link.label}
-                </Link>
-              ))}
-              {loading && (
-                <div className="px-4 py-3">
-                  <div className="h-9 rounded-xl bg-zinc-100 dark:bg-zinc-800 animate-pulse" />
-                </div>
-              )}
-              {!loading && isAuthenticated && user && (
-                <div className="pt-2 pb-2 border-t border-zinc-100 dark:border-zinc-800">
-                  <div className="flex items-center gap-3 px-4 py-2">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white text-xs font-semibold overflow-hidden">
-                      <UserAvatar
-                        user={user}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-zinc-900 dark:text-white truncate">{user.displayName}</p>
-                      <p className="text-xs text-zinc-400 truncate">{user.email}</p>
-                    </div>
-                  </div>
+            <div className="px-4 pt-4 pb-5 space-y-1">
+              {navLinks.map((link) => {
+                const active = isActive(link);
+                return (
+                  <Link
+                    key={link.href}
+                    to={link.href}
+                    onClick={() => setMobileOpen(false)}
+                    className={cn(
+                      'flex items-center gap-2.5 px-4 py-2.5 rounded-2xl text-sm font-bold transition-colors',
+                      active
+                        ? 'text-[#F6E9D2]'
+                        : 'text-[#0B7C3C] hover:bg-[#D7F27A]'
+                    )}
+                    style={active ? { background: '#0FA34E' } : {}}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
+              {/* Mobile sign in / out */}
+              <div className="pt-3 border-t mt-2" style={{ borderColor: 'rgba(15,163,78,0.15)' }}>
+                {isAuthenticated ? (
                   <button
                     onClick={() => { setMobileOpen(false); logout(); }}
-                    className="flex items-center gap-2 w-full px-4 py-3 rounded-xl text-sm text-zinc-600 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-bold w-full transition-colors"
+                    style={{ color: '#E1584A' }}
                   >
-                    <LogOut className="w-4 h-4" />
-                    Sign Out
+                    <LogOut className="w-4 h-4" /> Sign Out
                   </button>
-                  {user.isAdmin && (
-                    <Link
-                      to="/admin/company-bank"
-                      className="flex items-center gap-2 w-full px-4 py-3 rounded-xl text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-                    >
-                      <Building2 className="w-4 h-4" />
-                      Company Bank Admin
-                    </Link>
-                  )}
-                </div>
-              )}
-              {!loading && !isAuthenticated && (
-                <>
+                ) : (
                   <button
                     onClick={() => { setMobileOpen(false); login(); }}
-                    className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+                    className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl font-bold text-sm"
+                    style={{ background: '#0FA34E', color: '#F6E9D2' }}
                   >
-                    <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
-                      <path fill="#4285F4" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
-                      <path fill="#34A853" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
-                      <path fill="#FBBC05" d="M10.54 28.59A14.5 14.5 0 0 1 9.5 24c0-1.59.28-3.14.76-4.59l-7.98-6.19A23.99 23.99 0 0 0 0 24c0 3.77.87 7.35 2.56 10.56l7.98-5.97z" />
-                      <path fill="#EA4335" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 5.97C6.51 42.62 14.62 48 24 48z" />
-                    </svg>
-                    Sign in with Google
+                    Sign In with Google
                   </button>
-                  <Link to="/dashboard" className="block pt-2">
-                    <AnimatedButton variant="primary" className="w-full text-sm !px-5 !py-3 group">
-                      Get Started
-                      <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-                    </AnimatedButton>
-                  </Link>
-                </>
-              )}
+                )}
+              </div>
             </div>
           </motion.div>
         )}

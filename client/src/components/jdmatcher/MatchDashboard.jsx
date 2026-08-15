@@ -45,12 +45,15 @@ export default function MatchDashboard({ data, onReset }) {
       animate="visible"
       className="space-y-8"
     >
-      <motion.div variants={itemVariants} className="flex items-center justify-between">
+      <motion.div variants={itemVariants} className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">
+          <p className="mb-2 font-mono text-xs font-bold uppercase tracking-[0.24em] text-fuchsia-600 dark:text-fuchsia-300">
+            Role alignment report
+          </p>
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-zinc-950 dark:text-white">
             Match Results
           </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+          <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400 mt-2">
             {data.resume?.fileName || 'Resume'} matched against {data.jd?.company || 'target role'}
           </p>
         </div>

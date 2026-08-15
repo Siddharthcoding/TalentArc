@@ -1,15 +1,81 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
-import { AlertCircle, Building2, ChevronRight, Globe, Loader2, Search } from "lucide-react";
-import { getCompanies } from "@/services/api";
-import SectionWrapper from "@/components/ui/SectionWrapper";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  AlertCircle,
+  Building2,
+  ChevronRight,
+  Loader2,
+  Search,
+  CheckCircle2,
+  PlusCircle,
+  X,
+  Send,
+  Sparkles,
+  HelpCircle,
+  BookOpen
+} from "lucide-react";
+import { getCompanies, contributeCompanyQuestion } from "@/services/api";
+import { useAuth } from "@/context/AuthContext";
+
+const inputStyle = {
+  width: "100%",
+  padding: "9px 14px",
+  borderRadius: "14px",
+  border: "1.5px solid rgba(15, 163, 78, 0.25)",
+  background: "#DFF5E6",
+  color: "#0B7C3C",
+  fontSize: "13px",
+  fontWeight: 600,
+  outline: "none",
+  fontFamily: "Inter, sans-serif",
+};
+
+const labelStyle = {
+  display: "block",
+  fontSize: "11px",
+  fontWeight: 700,
+  color: "#0FA34E",
+  marginBottom: "4px",
+  textTransform: "uppercase",
+  letterSpacing: "0.5px",
+};
 
 export default function CompanyBank() {
+  const { user, isAuthenticated, login } = useAuth();
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
+
+  // Contribution Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [formData, setFormData] = useState({
+    companyName: "",
+    roundType: "Online Assessment (OA)",
+    questionTitle: "",
+    questionType: "text",
+    difficulty: "Medium",
+    questionBody: "",
+    tags: "",
+    optionsText: "Option A\nOption B\nOption C\nOption D",
+    correctOption: 0,
+    contributorName: "",
+    contributorEmail: "",
+    contributorBatch: "B.Tech CSE '25",
+  });
+
+  useEffect(() => {
+    if (user) {
+      setFormData((prev) => ({
+        ...prev,
+        contributorName: user.displayName || prev.contributorName,
+        contributorEmail: user.email || prev.contributorEmail,
+      }));
+    }
+  }, [user]);
 
   useEffect(() => {
     getCompanies()
@@ -30,103 +96,424 @@ export default function CompanyBank() {
     );
   }, [companies, search]);
 
-  return (
-    <SectionWrapper className="min-h-screen pt-24 pb-16 relative overflow-hidden">
-      <div className="absolute inset-0 bg-grid pointer-events-none" />
+  const showToast = (msg, type = "success") => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 4000);
+  };
 
-      <div className="w-full max-w-5xl mx-auto relative z-10">
-        <div className="text-center max-w-2xl mx-auto mb-10">
+  const handleContributeSubmit = async (e) => {
+    e.preventDefault();
+    if (!isAuthenticated) {
+      showToast("Please sign in to contribute questions.", "error");
+      return;
+    }
+    if (!formData.questionTitle.trim()) {
+      showToast("Please enter a question title.", "error");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const payload = {
+        companyName: formData.companyName.trim() || "General KIIT Placement",
+        roundType: formData.roundType,
+        questionTitle: formData.questionTitle.trim(),
+        questionType: formData.questionType,
+        difficulty: formData.difficulty,
+        questionBody: formData.questionBody.trim(),
+        tags: formData.tags.split(",").map((t) => t.trim()).filter(Boolean),
+        options: formData.questionType === "mcq" ? formData.optionsText.split("\n").map((o) => o.trim()).filter(Boolean) : null,
+        correctOption: formData.questionType === "mcq" ? Number(formData.correctOption) : null,
+        image_url: formData.questionType === "image" ? formData.image_url?.trim() || null : null,
+        contributorName: formData.contributorName || user?.displayName,
+        contributorEmail: formData.contributorEmail || user?.email,
+        contributorBatch: formData.contributorBatch,
+      };
+
+      const res = await contributeCompanyQuestion(payload);
+      if (res.success) {
+        setIsModalOpen(false);
+        showToast("🎉 Question submitted! Admin will verify and publish it.");
+        setFormData((prev) => ({
+          ...prev,
+          questionTitle: "",
+          questionBody: "",
+          image_url: "",
+          tags: "",
+        }));
+      } else {
+        throw new Error(res.error || "Submission failed");
+      }
+    } catch (err) {
+      showToast(err?.message || "Failed to submit question.", "error");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="section-container py-24 space-y-8 text-left relative">
+      
+      {/* Toast Alert */}
+      <AnimatePresence>
+        {toast && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-50 dark:bg-violet-950/40 border border-violet-200/50 dark:border-violet-800/30 mb-4"
+            initial={{ opacity: 0, y: -30, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-20 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-full text-xs sm:text-sm font-bold shadow-2xl border-2 flex items-center gap-2"
+            style={{
+              background: toast.type === "error" ? "#E1584A" : "#0FA34E",
+              color: "#F6E9D2",
+              borderColor: toast.type === "error" ? "rgba(225,88,74,0.6)" : "rgba(198,255,61,0.6)",
+            }}
           >
-            <Building2 className="w-4 h-4 text-violet-500" />
-            <span className="text-xs font-semibold text-violet-600 dark:text-violet-400">Company Question Bank</span>
+            {toast.type === "error" ? <AlertCircle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4 text-[#C6FF3D]" />}
+            <span>{toast.msg}</span>
           </motion.div>
-          <h1 className="text-4xl font-extrabold text-zinc-900 dark:text-white sm:text-5xl tracking-tight leading-none mb-3">
-            Explore Question Banks
+        )}
+      </AnimatePresence>
+
+      {/* Header with Top Bar */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="space-y-2">
+          <div className="inline-block bg-[#0FA34E] text-[#C6FF3D] font-mono text-xs font-black px-3.5 py-1 rounded-full uppercase shadow">
+            ★ 100% VERIFIED KIIT RECRUITER INSIGHTS
+          </div>
+          <h1 className="font-display text-4xl sm:text-6xl font-extrabold text-[#0FA34E]">
+            Company Recruiter Bank
           </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Browse company-specific interview question libraries curated across coding, design, behavioral, and visual prompts.
+          <p className="text-sm font-medium text-[#0B7C3C] max-w-2xl">
+            Browse question banks, round-by-round interview transcripts, and CTC packages from HighRadius, Deloitte, Microsoft, PwC, Zscaler, and 35+ top recruiters.
           </p>
         </div>
 
-        <div className="relative max-w-xl mx-auto mb-10">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-          <input
-            type="text"
-            placeholder="Search companies..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 text-zinc-900 dark:text-white text-sm focus:border-indigo-500 focus:outline-none transition-colors"
-          />
-        </div>
-
-        {loading && (
-          <div className="flex justify-center py-20">
-            <Loader2 className="w-10 h-10 animate-spin text-indigo-500" />
-          </div>
-        )}
-
-        {!loading && error && (
-          <div className="flex items-center gap-3 p-4 bg-red-50 dark:bg-red-950/30 border border-red-200/50 dark:border-red-900/30 rounded-xl text-red-700 dark:text-red-400 text-sm max-w-xl mx-auto">
-            <AlertCircle className="w-5 h-5 shrink-0" />
-            {error}
-          </div>
-        )}
-
-        {!loading && !error && filtered.length === 0 && (
-          <div className="text-center py-20 text-zinc-400">
-            <Building2 className="w-12 h-12 mx-auto mb-3 opacity-30" />
-            <p className="text-sm">{search ? "No companies match your search." : "No companies have been added yet."}</p>
-          </div>
-        )}
-
-        {!loading && !error && filtered.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filtered.map((company, index) => (
-              <motion.div
-                key={company.id}
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.04 }}
-              >
-                <Link
-                  to={`/company-bank/${company.id}`}
-                  className="glass-card p-5 flex flex-col gap-3 hover:border-indigo-400/50 dark:hover:border-indigo-500/30 hover:shadow-md transition-all group"
-                >
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white text-xl font-bold shadow-sm overflow-hidden">
-                    {company.logo_url ? (
-                      <img src={company.logo_url} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      (company.name[0] || "?").toUpperCase()
-                    )}
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <h2 className="text-base font-bold text-zinc-900 dark:text-white truncate">{company.name}</h2>
-                    {company.description && (
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 line-clamp-2 leading-relaxed">{company.description}</p>
-                    )}
-                    {company.website && (
-                      <span className="inline-flex items-center gap-1 mt-2 text-xs text-indigo-500">
-                        <Globe className="w-3 h-3" />
-                        Website listed
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="flex items-center justify-between pt-2 border-t border-zinc-100 dark:border-zinc-800">
-                    <span className="text-xs text-zinc-400">{company.question_count || 0} questions</span>
-                    <ChevronRight className="w-4 h-4 text-indigo-400 group-hover:translate-x-0.5 transition-transform" />
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
-          </div>
-        )}
+        {/* Contribution Action Button */}
+        <button
+          onClick={() => {
+            if (!isAuthenticated) {
+              login();
+            } else {
+              setIsModalOpen(true);
+            }
+          }}
+          className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full font-display font-extrabold text-xs sm:text-sm transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 shrink-0"
+          style={{
+            background: "#0FA34E",
+            color: "#F6E9D2",
+            border: "2px solid rgba(198, 255, 61, 0.4)",
+          }}
+        >
+          <PlusCircle className="w-4 h-4 text-[#C6FF3D]" />
+          <span>Contribute a Question ✍️</span>
+        </button>
       </div>
-    </SectionWrapper>
+
+      {/* Search Input */}
+      <div className="relative max-w-md">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#0FA34E]" />
+        <input
+          type="text"
+          placeholder="Search company (e.g. HighRadius, Deloitte, Microsoft)..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full pl-11 pr-4 py-3 bg-[#F6E9D2] border-2 border-[#0FA34E]/30 rounded-2xl text-xs sm:text-sm font-bold text-[#0FA34E] focus:outline-none focus:border-[#0FA34E] shadow-sm"
+        />
+      </div>
+
+      {loading && (
+        <div className="py-20 text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-[#0FA34E] mx-auto mb-2" />
+          <p className="font-display font-bold text-sm text-[#0FA34E]">Loading recruiter bank...</p>
+        </div>
+      )}
+
+      {!loading && error && (
+        <div className="flex items-center gap-3 p-4 bg-red-100 border-2 border-red-300 rounded-2xl text-red-800 text-xs font-mono font-bold">
+          <AlertCircle className="w-5 h-5 shrink-0" />
+          {error}
+        </div>
+      )}
+
+      {!loading && !error && filtered.length === 0 && (
+        <div className="text-center py-20 text-[#0B7C3C] space-y-2">
+          <Building2 className="w-12 h-12 mx-auto opacity-50 text-[#0FA34E]" />
+          <p className="font-display font-bold text-base">No companies found matching "{search}".</p>
+          <p className="text-xs font-medium">Have a question from this recruiter? Click the contribute button above to submit it!</p>
+        </div>
+      )}
+
+      {!loading && !error && filtered.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filtered.map((company, index) => (
+            <motion.div
+              key={company.id}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.03 }}
+            >
+              <Link
+                to={`/company-bank/${company.id}`}
+                className="bg-[#F6E9D2] border-2 border-[#0FA34E]/20 hover:border-[#0FA34E] p-6 rounded-3xl shadow-md hover:shadow-xl transition-all flex flex-col justify-between group h-full"
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 rounded-2xl bg-[#0FA34E] text-[#F6E9D2] font-display font-extrabold text-xl flex items-center justify-center shadow">
+                      {company.logo_url ? (
+                        <img src={company.logo_url} alt="" className="w-full h-full object-cover rounded-2xl" />
+                      ) : (
+                        (company.name[0] || "?").toUpperCase()
+                      )}
+                    </div>
+                    <span className="font-mono text-[10px] font-bold bg-[#C6FF3D] text-[#0FA34E] px-2.5 py-1 rounded-full border border-[#0FA34E]/20">
+                      KIIT '25 Verified
+                    </span>
+                  </div>
+
+                  <h3 className="font-display font-extrabold text-xl text-[#0FA34E] group-hover:text-[#0B7C3C] transition-colors">
+                    {company.name}
+                  </h3>
+                  <p className="text-xs text-[#0B7C3C] mt-2 line-clamp-2 font-medium leading-relaxed">
+                    {company.description || "Round-by-round interview process, coding questions, and aptitude test transcripts."}
+                  </p>
+                </div>
+
+                <div className="mt-6 pt-4 border-t border-[#0FA34E]/15 flex items-center justify-between text-xs font-mono font-bold text-[#0FA34E]">
+                  <span>{company.question_count || 0}+ Questions</span>
+                  <ChevronRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
+                </div>
+              </Link>
+            </motion.div>
+          ))}
+        </div>
+      )}
+
+      {/* ── QUESTION CONTRIBUTION MODAL ── */}
+      <AnimatePresence>
+        {isModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: "rgba(11, 124, 60, 0.65)", backdropFilter: "blur(6px)" }}
+            onClick={(e) => e.target === e.currentTarget && setIsModalOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.94, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.94, y: 20 }}
+              className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border-2 p-6 sm:p-8 shadow-2xl space-y-5"
+              style={{ background: "#F6E9D2", borderColor: "#0FA34E" }}
+            >
+              {/* Modal Top */}
+              <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: "rgba(15, 163, 78, 0.2)" }}>
+                <div>
+                  <h2 className="text-xl font-extrabold text-[#0FA34E]" style={{ fontFamily: '"Baloo 2", cursive' }}>
+                    Contribute Placement Question ✍️
+                  </h2>
+                  <p className="text-xs text-[#0B7C3C] font-medium">
+                    Help fellow KIITians! Your submitted question will be emailed to admin for verification.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="p-1.5 rounded-full hover:bg-[#D7F27A] text-[#0B7C3C] transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Form */}
+              <form onSubmit={handleContributeSubmit} className="space-y-4">
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label style={labelStyle}>Recruiter / Company *</label>
+                    <input
+                      value={formData.companyName}
+                      onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                      placeholder="e.g. HighRadius, Deloitte, Microsoft, PwC"
+                      style={inputStyle}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Placement Round *</label>
+                    <select
+                      value={formData.roundType}
+                      onChange={(e) => setFormData({ ...formData, roundType: e.target.value })}
+                      style={inputStyle}
+                    >
+                      <option>Online Assessment (OA)</option>
+                      <option>Technical Round 1</option>
+                      <option>Technical Round 2</option>
+                      <option>Managerial Round</option>
+                      <option>HR Interview Round</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label style={labelStyle}>Question Format</label>
+                    <select
+                      value={formData.questionType}
+                      onChange={(e) => setFormData({ ...formData, questionType: e.target.value })}
+                      style={inputStyle}
+                    >
+                      <option value="text">Coding / Subjective</option>
+                      <option value="mcq">MCQ Choice</option>
+                      <option value="image">Diagram / Schema (Image URL)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Difficulty Level</label>
+                    <select
+                      value={formData.difficulty}
+                      onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })}
+                      style={inputStyle}
+                    >
+                      <option>Easy</option>
+                      <option>Medium</option>
+                      <option>Hard</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Topic Tags</label>
+                    <input
+                      value={formData.tags}
+                      onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                      placeholder="SQL, Java, DP, Trees"
+                      style={inputStyle}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={labelStyle}>Question Title / Problem Statement *</label>
+                  <input
+                    value={formData.questionTitle}
+                    onChange={(e) => setFormData({ ...formData, questionTitle: e.target.value })}
+                    placeholder="e.g. Find Nth Fibonacci with Matrix Exponentiation (Microsoft OA)"
+                    style={inputStyle}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label style={labelStyle}>Full Question Details, Constraints & Solution Notes</label>
+                  <textarea
+                    rows={formData.questionType === "image" ? 2 : 4}
+                    value={formData.questionBody}
+                    onChange={(e) => setFormData({ ...formData, questionBody: e.target.value })}
+                    placeholder="Provide description, constraints, input/output test cases, or your cleared approach..."
+                    style={inputStyle}
+                  />
+                </div>
+
+                {formData.questionType === "image" && (
+                  <div className="space-y-2 p-3.5 rounded-2xl border bg-[#DFF5E6]/60" style={{ borderColor: "rgba(15, 163, 78, 0.25)" }}>
+                    <label style={labelStyle}>Image / Schema Diagram URL *</label>
+                    <input
+                      type="url"
+                      value={formData.image_url || ""}
+                      onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                      placeholder="https://i.imgur.com/example.png or https://..."
+                      style={inputStyle}
+                      required={formData.questionType === "image"}
+                    />
+                    <p className="text-[10px] text-[#0B7C3C88]">
+                      Paste a direct image link (e.g. Imgur, Cloudinary, Google Drive direct link) of the question diagram, schema or problem screenshot.
+                    </p>
+                    {formData.image_url && (
+                      <div className="mt-2 p-2 rounded-xl bg-white border border-[#0FA34E]/20 text-center">
+                        <p className="text-[10px] font-bold text-[#0FA34E] mb-1">Image Preview:</p>
+                        <img
+                          src={formData.image_url}
+                          alt="Question Preview"
+                          className="max-h-48 max-w-full rounded-lg object-contain mx-auto"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {formData.questionType === "mcq" && (
+                  <div className="grid grid-cols-1 sm:grid-cols-[1fr_120px] gap-3">
+                    <div>
+                      <label style={labelStyle}>Options (one per line)</label>
+                      <textarea
+                        rows={4}
+                        value={formData.optionsText}
+                        onChange={(e) => setFormData({ ...formData, optionsText: e.target.value })}
+                        style={inputStyle}
+                      />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Correct # (0-3)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="3"
+                        value={formData.correctOption}
+                        onChange={(e) => setFormData({ ...formData, correctOption: e.target.value })}
+                        style={inputStyle}
+                      />
+                      <p className="text-[10px] text-[#0B7C3C88] mt-1">0=Option A, 1=B</p>
+                    </div>
+                  </div>
+                )}
+
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <div>
+                    <label style={labelStyle}>Your Name</label>
+                    <input
+                      value={formData.contributorName}
+                      onChange={(e) => setFormData({ ...formData, contributorName: e.target.value })}
+                      placeholder="Your Name (or Leave Anonymous)"
+                      style={inputStyle}
+                    />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Branch & Batch</label>
+                    <input
+                      value={formData.contributorBatch}
+                      onChange={(e) => setFormData({ ...formData, contributorBatch: e.target.value })}
+                      placeholder="e.g. B.Tech CSE '25"
+                      style={inputStyle}
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full py-3.5 rounded-full font-bold text-xs sm:text-sm shadow-lg transition-all flex items-center justify-center gap-2 mt-2 disabled:opacity-60"
+                  style={{ background: "#0FA34E", color: "#F6E9D2", fontFamily: '"Baloo 2", cursive' }}
+                >
+                  {submitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Submitting to Admin...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4 text-[#C6FF3D]" />
+                      <span>Submit Question to Admin</span>
+                    </>
+                  )}
+                </button>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+    </div>
   );
 }

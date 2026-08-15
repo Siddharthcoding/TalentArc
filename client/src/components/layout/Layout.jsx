@@ -5,9 +5,9 @@ import Navbar from './Navbar';
 import Footer from './Footer';
 
 const pageVariants = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' } },
-  exit: { opacity: 0, y: -20, transition: { duration: 0.3, ease: 'easeIn' } },
+  initial: { opacity: 0, y: 14 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] } },
+  exit: { opacity: 0, y: -10, transition: { duration: 0.2, ease: 'easeIn' } },
 };
 
 export default function Layout() {
@@ -15,7 +15,7 @@ export default function Layout() {
 
   return (
     <ThemeProvider>
-      <div className="flex flex-col min-h-screen">
+      <div className="bg-[#D7F27A] text-[#0FA34E] min-h-screen flex flex-col font-sans relative selection:bg-[#0FA34E] selection:text-[#F6E9D2]">
         <Navbar />
         <main className="flex-1">
           <AnimatePresence mode="wait">

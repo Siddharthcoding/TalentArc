@@ -171,22 +171,23 @@ function AssessmentSessionContent() {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-zinc-950 flex flex-col items-center justify-center gap-4 text-white z-50">
-        <Loader2 className="w-10 h-10 animate-spin text-indigo-500" />
-        <p className="text-sm text-zinc-400">Loading your timed session...</p>
+      <div className="fixed inset-0 flex flex-col items-center justify-center gap-4 z-50" style={{ background: '#0B2A1A' }}>
+        <Loader2 className="w-10 h-10 animate-spin" style={{ color: '#D7F27A' }} />
+        <p className="text-sm font-semibold" style={{ color: '#DFF5E6' }}>Loading your timed session...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="fixed inset-0 bg-zinc-950 flex flex-col items-center justify-center gap-4 text-white p-4 z-50">
-        <AlertTriangle className="w-12 h-12 text-red-500" />
-        <h2 className="text-xl font-bold">Session Error</h2>
-        <p className="text-sm text-zinc-400 max-w-md text-center">{error}</p>
+      <div className="fixed inset-0 flex flex-col items-center justify-center gap-4 p-4 z-50" style={{ background: '#0B2A1A' }}>
+        <AlertTriangle className="w-12 h-12" style={{ color: '#E1584A' }} />
+        <h2 className="text-xl font-bold" style={{ color: '#D7F27A', fontFamily: '"Baloo 2", cursive' }}>Session Error</h2>
+        <p className="text-sm max-w-md text-center" style={{ color: '#DFF5E6' }}>{error}</p>
         <button
           onClick={() => navigate('/assessment')}
-          className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-sm font-semibold rounded-xl transition-colors"
+          className="px-5 py-2.5 text-sm font-bold rounded-full transition-colors"
+          style={{ background: '#0FA34E', color: '#D7F27A' }}
         >
           Return to Portal
         </button>
@@ -197,41 +198,41 @@ function AssessmentSessionContent() {
   // Pre-test instructions screen
   if (preTestModal) {
     return (
-      <div className="fixed inset-0 bg-zinc-950/98 flex items-center justify-center p-4 z-50 overflow-y-auto">
+      <div className="fixed inset-0 flex items-center justify-center p-4 z-50 overflow-y-auto" style={{ background: '#0B2A1A' }}>
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 sm:p-8 max-w-xl w-full text-white shadow-2xl relative overflow-hidden"
+          className="rounded-[2rem] p-6 sm:p-8 max-w-xl w-full shadow-2xl relative overflow-hidden border-2"
+          style={{ background: '#0F3B22', borderColor: '#0FA34E44' }}
         >
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 to-violet-500" />
-          <h2 className="text-2xl font-extrabold mb-4 tracking-tight">Security & Fullscreen Policy</h2>
-          
-          <div className="space-y-4 text-zinc-300 text-sm leading-relaxed mb-6">
+          <div className="absolute top-0 left-0 right-0 h-1.5 rounded-t-[2rem]"
+            style={{ background: 'linear-gradient(90deg, #0FA34E, #D7F27A, #0FA34E)' }} />
+          <h2 className="text-2xl font-extrabold mb-4 tracking-tight"
+            style={{ fontFamily: '"Baloo 2", cursive', color: '#D7F27A' }}>
+            Security &amp; Fullscreen Policy
+          </h2>
+
+          <div className="space-y-4 text-sm leading-relaxed mb-6" style={{ color: '#DFF5E6' }}>
             <p>
-              This is a timed, proctored mock assessment for <strong className="text-indigo-400">"{assessment?.topic}"</strong>. To simulate actual test conditions, you must agree to the following rules:
+              This is a timed, proctored mock assessment for{' '}
+              <strong style={{ color: '#D7F27A' }}>&#34;{assessment?.topic}&#34;</strong>.{' '}
+              To simulate actual test conditions, agree to the following rules:
             </p>
             <ul className="list-disc pl-5 space-y-2">
-              <li>
-                <strong className="text-white">Fullscreen Lock</strong>: The assessment runs strictly in fullscreen.
-              </li>
-              <li>
-                <strong className="text-amber-400">1st Warning</strong>: Exiting fullscreen triggers a system warning pop-up.
-              </li>
-              <li>
-                <strong className="text-red-400">Automatic Termination</strong>: If you exit fullscreen a second time, the test terminates immediately, registering a score of 0.
-              </li>
-              <li>
-                <strong className="text-white">Time Limit</strong>: The test auto-submits when the timer reaches 0.
-              </li>
+              <li><strong style={{ color: '#D7F27A' }}>Fullscreen Lock</strong>: The assessment runs strictly in fullscreen.</li>
+              <li><strong style={{ color: '#E8A33D' }}>1st Warning</strong>: Exiting fullscreen triggers a system warning pop-up.</li>
+              <li><strong style={{ color: '#E1584A' }}>Automatic Termination</strong>: If you exit fullscreen a second time, the test terminates immediately, registering a score of 0.</li>
+              <li><strong style={{ color: '#D7F27A' }}>Time Limit</strong>: The test auto-submits when the timer reaches 0.</li>
             </ul>
           </div>
 
           <button
             onClick={requestFullscreenLock}
-            className="w-full flex items-center justify-center gap-2.5 py-3.5 bg-indigo-600 hover:bg-indigo-500 active:scale-98 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/25 transition-all text-sm"
+            className="w-full flex items-center justify-center gap-2.5 py-3.5 font-bold rounded-2xl shadow-lg transition-all text-sm"
+            style={{ background: '#0FA34E', color: '#D7F27A' }}
           >
             <Maximize2 className="w-4 h-4 shrink-0" />
-            Accept & Enter Full Screen
+            Accept &amp; Enter Full Screen
           </button>
         </motion.div>
       </div>
@@ -241,20 +242,22 @@ function AssessmentSessionContent() {
   // Auto termination splash
   if (isTerminated) {
     return (
-      <div className="fixed inset-0 bg-zinc-950 flex items-center justify-center p-4 z-50">
+      <div className="fixed inset-0 flex items-center justify-center p-4 z-50" style={{ background: '#0B2A1A' }}>
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-zinc-900 border border-red-500/20 text-center rounded-2xl p-8 max-w-md w-full shadow-2xl"
+          className="text-center rounded-3xl p-8 max-w-md w-full shadow-2xl border-2"
+          style={{ background: '#0F3B22', borderColor: '#E1584A44' }}
         >
-          <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4 animate-bounce" />
-          <h2 className="text-2xl font-extrabold text-white mb-2">Test Terminated</h2>
-          <p className="text-sm text-zinc-400 leading-relaxed mb-6">
-            Your assessment session was auto-terminated and submitted with a score of 0 because you exited full screen mode multiple times.
+          <AlertTriangle className="w-16 h-16 mx-auto mb-4 animate-bounce" style={{ color: '#E1584A' }} />
+          <h2 className="text-2xl font-extrabold mb-2" style={{ fontFamily: '"Baloo 2", cursive', color: '#D7F27A' }}>Test Terminated</h2>
+          <p className="text-sm leading-relaxed mb-6" style={{ color: '#DFF5E6' }}>
+            Your assessment was auto-terminated and submitted with a score of 0 because you exited full screen mode multiple times.
           </p>
           <button
             onClick={() => handleFinalSubmit(true)}
-            className="w-full py-3 bg-red-600 hover:bg-red-500 text-white font-semibold rounded-xl shadow-lg transition-colors text-sm"
+            className="w-full py-3 font-bold rounded-xl shadow-lg transition-colors text-sm"
+            style={{ background: '#E1584A', color: '#F6E9D2' }}
           >
             View Violation Report
           </button>
@@ -266,20 +269,22 @@ function AssessmentSessionContent() {
   // Active warning overlay
   if (showWarningModal) {
     return (
-      <div className="fixed inset-0 bg-zinc-950/98 flex items-center justify-center p-4 z-50">
+      <div className="fixed inset-0 flex items-center justify-center p-4 z-50" style={{ background: '#0B2A1Acc' }}>
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-zinc-900 border border-amber-500/30 rounded-2xl p-6 sm:p-8 max-w-md w-full text-center shadow-2xl"
+          className="rounded-3xl p-6 sm:p-8 max-w-md w-full text-center shadow-2xl border-2"
+          style={{ background: '#0F3B22', borderColor: '#E8A33D44' }}
         >
-          <AlertTriangle className="w-14 h-14 text-amber-500 mx-auto mb-4 animate-pulse" />
-          <h2 className="text-xl font-bold text-white mb-2">Fullscreen Exit Detected!</h2>
-          <p className="text-sm text-zinc-400 leading-relaxed mb-6">
-            This is your <span className="text-amber-400 font-bold">1st Warning</span>. If you exit fullscreen again, the assessment will terminate immediately and your current score will be submitted.
+          <AlertTriangle className="w-14 h-14 mx-auto mb-4 animate-pulse" style={{ color: '#E8A33D' }} />
+          <h2 className="text-xl font-bold mb-2" style={{ fontFamily: '"Baloo 2", cursive', color: '#D7F27A' }}>Fullscreen Exit Detected!</h2>
+          <p className="text-sm leading-relaxed mb-6" style={{ color: '#DFF5E6' }}>
+            This is your <span style={{ color: '#E8A33D', fontWeight: 700 }}>1st Warning</span>. If you exit fullscreen again, the assessment will terminate immediately.
           </p>
           <button
             onClick={requestFullscreenLock}
-            className="w-full py-3 bg-amber-600 hover:bg-amber-500 text-white font-semibold rounded-xl shadow-lg transition-colors text-sm"
+            className="w-full py-3 font-bold rounded-xl shadow-lg transition-colors text-sm"
+            style={{ background: '#E8A33D', color: '#0B2A1A' }}
           >
             Re-enter Full Screen
           </button>
@@ -300,42 +305,47 @@ function AssessmentSessionContent() {
   const isFlagged = flaggedQuestions[currentQuestion?.id];
 
   return (
-    <div className="fixed inset-0 bg-zinc-950 text-white flex flex-col z-40 select-none overflow-hidden">
-      {/* Top Header Row */}
-      <header className="h-16 shrink-0 border-b border-zinc-800/80 bg-zinc-900/40 px-6 flex items-center justify-between">
+    <div className="fixed inset-0 flex flex-col z-40 select-none overflow-hidden" style={{ background: '#0B2A1A', color: '#F6E9D2' }}>
+      {/* Header */}
+      <header className="relative h-16 shrink-0 border-b px-6 flex items-center justify-between" style={{ borderColor: '#0FA34E33', background: '#0F3B22' }}>
         <div className="flex items-center gap-3">
-          <div className="w-6 h-6 rounded-md bg-indigo-600 flex items-center justify-center text-xs font-black">TA</div>
-          <span className="text-sm font-bold tracking-tight text-zinc-300">
-            Assessment: <strong className="text-white font-medium">{assessment?.topic}</strong>
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black"
+            style={{ background: '#0FA34E', color: '#D7F27A', fontFamily: '"Baloo 2", cursive' }}>KA</div>
+          <span className="text-sm font-semibold" style={{ color: '#DFF5E6' }}>
+            Assessment: <strong style={{ color: '#D7F27A' }}>{assessment?.topic}</strong>
           </span>
         </div>
-
-        {/* Timer */}
-        <div className="flex items-center gap-2.5 px-4 py-2 rounded-xl bg-zinc-900 border border-zinc-800">
-          <Timer className={`w-4 h-4 ${timeLeft < 60 ? 'text-red-500 animate-pulse' : 'text-zinc-400'}`} />
-          <span className={`font-mono text-sm font-bold ${timeLeft < 60 ? 'text-red-500' : 'text-zinc-200'}`}>
+        <div className="flex items-center gap-2.5 px-4 py-2 rounded-2xl border"
+          style={{ background: '#0FA34E22', borderColor: '#0FA34E44' }}>
+          <Timer className={`w-4 h-4 ${timeLeft < 60 ? 'animate-pulse' : ''}`}
+            style={{ color: timeLeft < 60 ? '#E1584A' : '#D7F27A' }} />
+          <span className="text-sm font-bold" style={{ color: timeLeft < 60 ? '#E1584A' : '#D7F27A', fontFamily: '"JetBrains Mono", monospace' }}>
             {formatTime(timeLeft)}
           </span>
         </div>
       </header>
 
       {/* Main Work Area */}
-      <div className="flex-1 flex min-h-0 relative">
-        {/* Left Side: MCQ Player Core */}
+      <div className="relative flex-1 flex min-h-0">
+        {/* MCQ Player */}
         <main className="flex-1 flex flex-col justify-between p-6 sm:p-12 overflow-y-auto max-w-4xl mx-auto">
-          {/* Question Text */}
           <div className="my-auto space-y-8">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-indigo-400 uppercase tracking-widest">Question {currentIndex + 1} of {questions.length}</span>
-                <span className="text-[11px] text-zinc-500 font-semibold px-2 py-0.5 rounded border border-zinc-800 bg-zinc-900/30 uppercase tracking-wider">{currentQuestion?.topic || assessment?.topic}</span>
+                <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#D7F27A' }}>
+                  Question {currentIndex + 1} of {questions.length}
+                </span>
+                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full border uppercase tracking-wider"
+                  style={{ color: '#DFF5E6', borderColor: '#0FA34E44', background: '#0FA34E22' }}>
+                  {currentQuestion?.topic || assessment?.topic}
+                </span>
               </div>
-              <h1 className="text-lg sm:text-2xl font-bold leading-snug text-white">
+              <h1 className="text-lg sm:text-2xl font-bold leading-snug" style={{ color: '#F6E9D2' }}>
                 {currentQuestion?.question_text}
               </h1>
             </div>
 
-            {/* Options List */}
+            {/* Options */}
             <div className="grid grid-cols-1 gap-3.5">
               {currentQuestion?.options.map((opt, oIdx) => {
                 const isSelected = selectedOptionIdx === oIdx;
@@ -343,15 +353,17 @@ function AssessmentSessionContent() {
                   <button
                     key={oIdx}
                     onClick={() => handleSelectOption(oIdx)}
-                    className={`flex items-center justify-between text-left p-4 rounded-xl border text-sm font-semibold transition-all ${
-                      isSelected
-                        ? 'border-indigo-500 bg-indigo-500/10 text-white shadow-md'
-                        : 'border-zinc-800 hover:border-zinc-700 bg-zinc-900/40 text-zinc-300 hover:text-white hover:bg-zinc-900/60'
-                    }`}
+                    className="flex items-center justify-between text-left p-4 rounded-2xl border text-sm font-semibold transition-all"
+                    style={{
+                      background: isSelected ? '#0FA34E22' : '#0F3B22',
+                      borderColor: isSelected ? '#D7F27A' : '#0FA34E44',
+                      color: isSelected ? '#D7F27A' : '#DFF5E6',
+                    }}
                   >
                     <span>{opt}</span>
-                    <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ${isSelected ? 'border-indigo-500 bg-indigo-500 text-white' : 'border-zinc-700'}`}>
-                      {isSelected && <Check className="w-3.5 h-3.5" />}
+                    <div className="w-5 h-5 rounded-full border flex items-center justify-center shrink-0"
+                      style={{ borderColor: isSelected ? '#D7F27A' : '#0FA34E44', background: isSelected ? '#D7F27A' : 'transparent' }}>
+                      {isSelected && <Check className="w-3.5 h-3.5" style={{ color: '#0B2A1A' }} />}
                     </div>
                   </button>
                 );
@@ -359,24 +371,26 @@ function AssessmentSessionContent() {
             </div>
           </div>
 
-          {/* Footer controls */}
-          <footer className="h-16 shrink-0 flex items-center justify-between border-t border-zinc-900 mt-8 pt-6">
+          {/* Footer Controls */}
+          <footer className="h-16 shrink-0 flex items-center justify-between border-t mt-8 pt-6" style={{ borderColor: '#0FA34E22' }}>
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
                 disabled={currentIndex === 0}
-                className="p-3 border border-zinc-800 rounded-xl text-zinc-400 hover:text-white hover:border-zinc-700 disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                className="p-3 border rounded-2xl transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                style={{ borderColor: '#0FA34E44', color: '#D7F27A' }}
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
-              
+
               <button
                 onClick={toggleFlag}
-                className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-xs font-semibold transition-colors ${
-                  isFlagged
-                    ? 'border-amber-500/30 bg-amber-500/10 text-amber-400'
-                    : 'border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-700'
-                }`}
+                className="flex items-center gap-2 px-4 py-3 rounded-2xl border text-xs font-semibold transition-colors"
+                style={{
+                  borderColor: isFlagged ? '#E8A33D44' : '#0FA34E44',
+                  background: isFlagged ? '#E8A33D22' : 'transparent',
+                  color: isFlagged ? '#E8A33D' : '#DFF5E6',
+                }}
               >
                 <Flag className={`w-4 h-4 shrink-0 ${isFlagged ? 'fill-current' : ''}`} />
                 Flag for review
@@ -386,7 +400,8 @@ function AssessmentSessionContent() {
             {currentIndex < questions.length - 1 ? (
               <button
                 onClick={() => setCurrentIndex((prev) => prev + 1)}
-                className="flex items-center gap-1.5 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 font-bold rounded-xl shadow-lg transition-colors text-sm"
+                className="flex items-center gap-1.5 px-6 py-3 font-bold rounded-2xl shadow-lg transition-colors text-sm"
+                style={{ background: '#0FA34E', color: '#D7F27A' }}
               >
                 Next
                 <ChevronRight className="w-4 h-4" />
@@ -395,68 +410,61 @@ function AssessmentSessionContent() {
               <button
                 onClick={() => handleFinalSubmit()}
                 disabled={submitting}
-                className="flex items-center gap-1.5 px-6 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-700/60 font-bold rounded-xl shadow-lg shadow-emerald-600/10 transition-colors text-sm"
+                className="flex items-center gap-1.5 px-6 py-3 font-bold rounded-2xl shadow-lg transition-colors text-sm disabled:opacity-60"
+                style={{ background: '#D7F27A', color: '#0B2A1A' }}
               >
                 {submitting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin text-white" />
-                    Submitting...
-                  </>
-                ) : (
-                  'Finish Assessment'
-                )}
+                  <><Loader2 className="w-4 h-4 animate-spin" />Submitting...</>
+                ) : 'Finish Assessment'}
               </button>
             )}
           </footer>
         </main>
 
-        {/* Right Side: Navigation Panel Drawer (Hidden on mobile) */}
-        <aside className="hidden md:block w-72 border-l border-zinc-800 bg-zinc-900/30 p-6 overflow-y-auto">
-          <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-6">Question Sheet</h2>
-          
+        {/* Right Side: Navigation Panel */}
+        <aside className="hidden md:block w-72 border-l p-6 overflow-y-auto" style={{ borderColor: '#0FA34E33', background: '#0F3B22' }}>
+          <h2 className="text-xs font-bold uppercase tracking-widest mb-6" style={{ color: '#D7F27A' }}>Question Sheet</h2>
           <div className="grid grid-cols-5 gap-2.5 mb-8">
             {questions.map((q, idx) => {
               const isCurrent = currentIndex === idx;
               const isAnswered = selectedAnswers[q.id] !== undefined;
               const isQFlagged = flaggedQuestions[q.id];
-
               return (
                 <button
                   key={q.id}
                   onClick={() => setCurrentIndex(idx)}
-                  className={`w-10 h-10 rounded-xl font-bold text-xs flex items-center justify-center relative transition-all border ${
-                    isCurrent
-                      ? 'border-indigo-500 bg-indigo-500/10 text-white'
-                      : isAnswered
-                        ? 'border-zinc-800 bg-zinc-800 text-zinc-300'
-                        : 'border-zinc-800 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300'
-                  }`}
+                  className="w-10 h-10 rounded-xl font-bold text-xs flex items-center justify-center relative transition-all border"
+                  style={{
+                    borderColor: isCurrent ? '#D7F27A' : '#0FA34E44',
+                    background: isCurrent ? '#D7F27A22' : isAnswered ? '#0FA34E22' : 'transparent',
+                    color: isCurrent ? '#D7F27A' : isAnswered ? '#DFF5E6' : '#DFF5E688',
+                  }}
                 >
                   {idx + 1}
                   {isQFlagged && (
-                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-500 border border-zinc-950" />
+                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border"
+                      style={{ background: '#E8A33D', borderColor: '#0B2A1A' }} />
                   )}
                 </button>
               );
             })}
           </div>
-
-          <div className="space-y-3.5 border-t border-zinc-800 pt-6 text-xs text-zinc-500">
+          <div className="space-y-3.5 border-t pt-6 text-xs" style={{ borderColor: '#0FA34E22', color: '#DFF5E6' }}>
             <div className="flex items-center gap-2.5">
-              <div className="w-4 h-4 rounded border border-zinc-800 bg-zinc-800" />
-              <span>Answered Question</span>
+              <div className="w-4 h-4 rounded border" style={{ background: '#0FA34E22', borderColor: '#0FA34E44' }} />
+              <span>Answered</span>
             </div>
             <div className="flex items-center gap-2.5">
-              <div className="w-4 h-4 rounded border border-zinc-800" />
-              <span>Unanswered Question</span>
+              <div className="w-4 h-4 rounded border" style={{ borderColor: '#0FA34E44' }} />
+              <span>Unanswered</span>
             </div>
             <div className="flex items-center gap-2.5">
-              <div className="w-4 h-4 rounded border border-indigo-500 bg-indigo-500/10" />
+              <div className="w-4 h-4 rounded border" style={{ background: '#D7F27A22', borderColor: '#D7F27A' }} />
               <span>Active Question</span>
             </div>
             <div className="flex items-center gap-2.5">
-              <div className="w-4 h-4 rounded border border-zinc-800 relative">
-                <span className="absolute inset-0.5 rounded bg-amber-500" />
+              <div className="w-4 h-4 rounded border relative" style={{ borderColor: '#E8A33D44' }}>
+                <span className="absolute inset-0.5 rounded" style={{ background: '#E8A33D' }} />
               </div>
               <span>Flagged for Review</span>
             </div>
