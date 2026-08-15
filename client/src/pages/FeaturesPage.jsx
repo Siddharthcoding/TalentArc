@@ -5,10 +5,17 @@ import SectionWrapper from '@/components/ui/SectionWrapper';
 import Features from '@/components/sections/Features';
 import TechBlueprint from '@/components/sections/TechBlueprint';
 import { fadeUpVariants } from '@/hooks/useScrollReveal';
+import SEO from '@/components/SEO';
 
 export default function FeaturesPage() {
   return (
     <div style={{ background: '#D7F27A' }} className="min-h-screen">
+      <SEO
+        title="Features"
+        description="Explore all Kampus Ace features: ATS Resume Checker, JD Skill Matcher, Company Q&A Bank, AI Mock Tests, Resume Builder, and Live Mentor Doubt Sessions — all free for KIIT students."
+        path="/features"
+        keywords="Kampus Ace features, KIIT placement tools, ATS checker features, company question bank, mock test features"
+      />
       <SectionWrapper className="pt-28 pb-8">
         <motion.div
           variants={fadeUpVariants}

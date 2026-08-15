@@ -8,6 +8,7 @@ import Dropzone from '@/components/upload/Dropzone';
 import UploadProgress from '@/components/upload/UploadProgress';
 import DashboardGrid from '@/components/dashboard/DashboardGrid';
 import AuthWall from '@/components/auth/AuthWall';
+import SEO from '@/components/SEO';
 import SectionWrapper from '@/components/ui/SectionWrapper';
 
 function DashboardContent() {
@@ -95,10 +96,18 @@ function DashboardContent() {
 
 export default function Dashboard() {
   return (
-    <ErrorBoundary>
-      <ResumeProvider>
-        <DashboardContent />
-      </ResumeProvider>
-    </ErrorBoundary>
+    <>
+      <SEO
+        title="ATS Resume Checker"
+        description="Instantly score your resume against ATS systems used by top campus recruiters at KIIT. Upload your resume and get a detailed ATS compatibility report with keyword and skill gap analysis."
+        path="/dashboard"
+        keywords="ATS resume checker, resume score, KIIT ATS, resume parser, ATS compatibility"
+      />
+      <ErrorBoundary>
+        <ResumeProvider>
+          <DashboardContent />
+        </ResumeProvider>
+      </ErrorBoundary>
+    </>
   );
 }

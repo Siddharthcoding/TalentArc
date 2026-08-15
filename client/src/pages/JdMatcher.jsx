@@ -7,6 +7,7 @@ import ProcessingState from '@/components/jdmatcher/ProcessingState';
 import MatchDashboard from '@/components/jdmatcher/MatchDashboard';
 import AuthWall from '@/components/auth/AuthWall';
 import ErrorModal from '@/components/ui/ErrorModal';
+import SEO from '@/components/SEO';
 
 function JdMatcherContent() {
   const { status, progressStep, result, error, startMatch, retry, reset } = useJdMatcher();
@@ -124,8 +125,16 @@ function JdMatcherContent() {
 
 export default function JdMatcher() {
   return (
-    <JdMatcherProvider>
-      <JdMatcherContent />
-    </JdMatcherProvider>
+    <>
+      <SEO
+        title="JD Skill Matcher"
+        description="Paste any job description and match it against your resume. See missing skills, keyword gaps, and get tailored improvement tips to land more interviews at KIIT campus placements."
+        path="/jd-matcher"
+        keywords="JD matcher, job description skill match, KIIT placement JD, resume keyword gap, skill gap analysis"
+      />
+      <JdMatcherProvider>
+        <JdMatcherContent />
+      </JdMatcherProvider>
+    </>
   );
 }

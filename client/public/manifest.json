@@ -1,0 +1,51 @@
+{
+  "name": "Kampus Ace",
+  "short_name": "Kampus Ace",
+  "description": "KIIT Campus Placement Prep — ATS Checker, Company Q&A Bank, Mock Tests & Doubt Sessions",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#D7F27A",
+  "theme_color": "#0FA34E",
+  "orientation": "portrait-primary",
+  "categories": ["education", "productivity"],
+  "lang": "en-IN",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "maskable any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/og-image.jpg",
+      "type": "image/jpeg",
+      "sizes": "1200x630",
+      "label": "Kampus Ace — Home Screen"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "ATS Checker",
+      "short_name": "ATS",
+      "description": "Check your resume ATS score",
+      "url": "/dashboard",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Company Question Bank",
+      "short_name": "Q&A Bank",
+      "description": "Browse interview questions by company",
+      "url": "/company-bank",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Mock Tests",
+      "short_name": "Mock Tests",
+      "description": "Take AI-powered mock placement tests",
+      "url": "/assessment",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+    }
+  ]
+}

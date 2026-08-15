@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Check, ArrowRight, Sparkles, ShieldCheck, Zap } from 'lucide-react';
 import SectionWrapper from '@/components/ui/SectionWrapper';
 import { useScrollReveal, staggerContainerVariants, fadeUpVariants } from '@/hooks/useScrollReveal';
+import SEO from '@/components/SEO';
 
 const TIERS = [
   {
@@ -57,6 +58,12 @@ export default function PricingPage() {
 
   return (
     <div style={{ background: '#D7F27A' }} className="min-h-screen">
+      <SEO
+        title="Pricing"
+        description="Kampus Ace is 100% free for all KIIT students. All placement tools — ATS checker, company Q&A banks, AI mock tests, and live mentor doubt sessions — at zero cost."
+        path="/pricing"
+        keywords="Kampus Ace pricing, free KIIT placement tools, free ATS checker, free mock tests KIIT"
+      />
       <SectionWrapper className="pt-32 pb-16">
         <motion.div
           variants={fadeUpVariants}

@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { getCompanies, contributeCompanyQuestion } from "@/services/api";
 import { useAuth } from "@/context/AuthContext";
+import SEO from "@/components/SEO";
 
 const inputStyle = {
   width: "100%",
@@ -153,6 +154,12 @@ export default function CompanyBank() {
 
   return (
     <div className="section-container py-24 space-y-8 text-left relative">
+      <SEO
+        title="KIIT Company Question Bank"
+        description="Verified interview questions for Microsoft, Amazon, Deloitte, HighRadius, Zscaler, PwC and 50+ KIIT campus recruiters. Curated by placed alumni to help you crack every round."
+        path="/company-bank"
+        keywords="KIIT company question bank, Microsoft interview questions KIIT, Amazon KIIT, HighRadius interview questions, Deloitte KIIT, campus placement questions"
+      />
       
       {/* Toast Alert */}
       <AnimatePresence>

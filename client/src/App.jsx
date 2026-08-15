@@ -1,26 +1,40 @@
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Routes, Route, useNavigate, useSearchParams } from 'react-router-dom';
 import { Loader2, Lock } from 'lucide-react';
 import Layout from '@/components/layout/Layout';
-import Home from '@/pages/Home';
-import Dashboard from '@/pages/Dashboard';
-import FeaturesPage from '@/pages/FeaturesPage';
-import PricingPage from '@/pages/PricingPage';
-import JdMatcher from '@/pages/JdMatcher';
-import Reports from '@/pages/Reports';
-import ReportDetail from '@/pages/ReportDetail';
-import AssessmentLanding from '@/pages/AssessmentLanding';
-import AssessmentSession from '@/pages/AssessmentSession';
-import AssessmentReport from '@/pages/AssessmentReport';
-import CompanyBank from '@/pages/CompanyBank';
-import CompanyBankDetail from '@/pages/CompanyBankDetail';
-import CompanyBankAdmin from '@/pages/CompanyBankAdmin';
-import ResumeBuilder from '@/pages/ResumeBuilder';
-import DoubtSessions from '@/pages/DoubtSessions';
-import DoubtSessionAdmin from '@/pages/DoubtSessionAdmin';
 import { useAuth } from '@/context/AuthContext';
 import { claimReport } from '@/services/api';
 import GoogleButton from '@/components/auth/GoogleButton';
+
+// ─── Lazy-loaded pages (code-split per route) ────────────────────────────────
+const Home               = lazy(() => import('@/pages/Home'));
+const Dashboard          = lazy(() => import('@/pages/Dashboard'));
+const FeaturesPage       = lazy(() => import('@/pages/FeaturesPage'));
+const PricingPage        = lazy(() => import('@/pages/PricingPage'));
+const JdMatcher          = lazy(() => import('@/pages/JdMatcher'));
+const Reports            = lazy(() => import('@/pages/Reports'));
+const ReportDetail       = lazy(() => import('@/pages/ReportDetail'));
+const AssessmentLanding  = lazy(() => import('@/pages/AssessmentLanding'));
+const AssessmentSession  = lazy(() => import('@/pages/AssessmentSession'));
+const AssessmentReport   = lazy(() => import('@/pages/AssessmentReport'));
+const CompanyBank        = lazy(() => import('@/pages/CompanyBank'));
+const CompanyBankDetail  = lazy(() => import('@/pages/CompanyBankDetail'));
+const CompanyBankAdmin   = lazy(() => import('@/pages/CompanyBankAdmin'));
+const ResumeBuilder      = lazy(() => import('@/pages/ResumeBuilder'));
+const DoubtSessions      = lazy(() => import('@/pages/DoubtSessions'));
+const DoubtSessionAdmin  = lazy(() => import('@/pages/DoubtSessionAdmin'));
+
+// ─── Loading fallback ─────────────────────────────────────────────────────────
+function PageLoader() {
+  return (
+    <div className="fixed inset-0 flex items-center justify-center bg-[#D7F27A]">
+      <div className="flex flex-col items-center gap-4 text-[#0FA34E]">
+        <Loader2 className="w-8 h-8 animate-spin text-[#0FA34E]" />
+        <p className="text-sm font-mono font-bold">Loading...</p>
+      </div>
+    </div>
+  );
+}
 
 function AuthLoading() {
   return (
@@ -109,26 +123,28 @@ function AuthCallback() {
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/auth/callback" element={<AuthCallback />} />
-      <Route path="/assessment/:id" element={<RequireAuth><AssessmentSession /></RequireAuth>} />
-      <Route element={<Layout />}>
-        <Route path="/" element={<Home />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/jd-matcher" element={<JdMatcher />} />
-        <Route path="/reports" element={<RequireAuth><Reports /></RequireAuth>} />
-        <Route path="/reports/:id" element={<RequireAuth><ReportDetail /></RequireAuth>} />
-        <Route path="/assessment" element={<RequireAuth><AssessmentLanding /></RequireAuth>} />
-        <Route path="/assessment/:id/report" element={<RequireAuth><AssessmentReport /></RequireAuth>} />
-        <Route path="/company-bank" element={<RequireAuth><CompanyBank /></RequireAuth>} />
-        <Route path="/company-bank/:id" element={<RequireAuth><CompanyBankDetail /></RequireAuth>} />
-        <Route path="/admin/company-bank" element={<CompanyBankAdmin />} />
-        <Route path="/resume-builder" element={<ResumeBuilder />} />
-        <Route path="/doubt-sessions" element={<DoubtSessions />} />
-        <Route path="/doubt-admin" element={<RequireAuth><DoubtSessionAdmin /></RequireAuth>} />
-        <Route path="/features" element={<FeaturesPage />} />
-        <Route path="/pricing" element={<PricingPage />} />
-      </Route>
-    </Routes>
+    <Suspense fallback={<PageLoader />}>
+      <Routes>
+        <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="/assessment/:id" element={<RequireAuth><AssessmentSession /></RequireAuth>} />
+        <Route element={<Layout />}>
+          <Route path="/"                       element={<Home />} />
+          <Route path="/dashboard"              element={<Dashboard />} />
+          <Route path="/jd-matcher"             element={<JdMatcher />} />
+          <Route path="/reports"                element={<RequireAuth><Reports /></RequireAuth>} />
+          <Route path="/reports/:id"            element={<RequireAuth><ReportDetail /></RequireAuth>} />
+          <Route path="/assessment"             element={<RequireAuth><AssessmentLanding /></RequireAuth>} />
+          <Route path="/assessment/:id/report"  element={<RequireAuth><AssessmentReport /></RequireAuth>} />
+          <Route path="/company-bank"           element={<RequireAuth><CompanyBank /></RequireAuth>} />
+          <Route path="/company-bank/:id"       element={<RequireAuth><CompanyBankDetail /></RequireAuth>} />
+          <Route path="/admin/company-bank"     element={<CompanyBankAdmin />} />
+          <Route path="/resume-builder"         element={<ResumeBuilder />} />
+          <Route path="/doubt-sessions"         element={<DoubtSessions />} />
+          <Route path="/doubt-admin"            element={<RequireAuth><DoubtSessionAdmin /></RequireAuth>} />
+          <Route path="/features"               element={<FeaturesPage />} />
+          <Route path="/pricing"                element={<PricingPage />} />
+        </Route>
+      </Routes>
+    </Suspense>
   );
 }

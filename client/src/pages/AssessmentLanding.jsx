@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { createAssessment, parseResumeForAssessment, getReports } from '@/services/api';
+import SEO from '@/components/SEO';
 
 const MODES = [
   { key: 'skill', label: 'Specific Skill(s)', icon: Code, description: 'Test on React, Java, SQL, DSA (comma-separated).' },
@@ -190,6 +191,12 @@ export default function AssessmentLanding() {
 
   return (
     <div className="section-container py-24 space-y-8 text-left max-w-5xl mx-auto">
+      <SEO
+        title="AI Mock Placement Tests"
+        description="Take AI-powered mock placement tests tailored to your target company. Practice DSA, Aptitude, SQL, System Design, and behavioral rounds — customized for KIIT campus recruiters."
+        path="/assessment"
+        keywords="mock placement test, AI mock test KIIT, DSA mock test, placement preparation, campus recruitment practice"
+      />
       <div>
         <div className="inline-block bg-[#0FA34E] text-[#C6FF3D] font-mono text-xs font-black px-3.5 py-1 rounded-full uppercase mb-2 shadow">
           ★ PROCTORED AI MOCK ASSESSMENT

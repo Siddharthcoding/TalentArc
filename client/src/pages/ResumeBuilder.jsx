@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { FileText, Download, Printer } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import SEO from '@/components/SEO';
 
 const TEMPLATES = [
   { id: 'kiit_standard', label: 'KIIT Standard', accent: '#0FA34E', headerBg: '#0FA34E', headerText: '#fff' },
@@ -233,6 +234,12 @@ export default function ResumeBuilder() {
 
   return (
     <div className="section-container py-24 space-y-8">
+      <SEO
+        title="ATS Resume Builder"
+        description="Build a job-winning, ATS-optimized resume in minutes with KIIT-specific templates. Choose from multiple layouts, fill in your details, and export to PDF — placement-ready in under 5 minutes."
+        path="/resume-builder"
+        keywords="ATS resume builder, resume builder KIIT, placement resume template, ATS-friendly resume, KIIT resume"
+      />
       {/* Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>

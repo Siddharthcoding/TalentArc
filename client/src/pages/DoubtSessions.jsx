@@ -34,6 +34,7 @@ import {
   deleteDoubtPoll
 } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
+import SEO from '@/components/SEO';
 
 const FALLBACK_SESSIONS = [
   { id: 'doubt-1', mentor: 'Ananya Sharma', role: 'Placed at Microsoft (₹51.0 LPA)', batch: "KIIT CSE '24 Alum", topic: 'Cracking HighRadius & Microsoft Coding & Technical Rounds', date: 'Today, 7:00 PM IST', duration: '60 Mins', totalSeats: 15, bookedSeats: 12, tags: ['DSA', 'Interview Tips', 'System Design'], avatar: 'AS', meetLink: 'https://meet.google.com/kampus-ace-doubt-1' },
@@ -258,6 +259,12 @@ export default function DoubtSessions() {
 
   return (
     <div className="section-container py-24 space-y-16" style={{ position: 'relative' }}>
+      <SEO
+        title="Mentor Doubt Sessions"
+        description="Book live doubt sessions with KIIT alumni placed at Microsoft, Amazon, HighRadius & Deloitte. Get personalized guidance on DSA, system design, HR rounds, and placement strategy."
+        path="/doubt-sessions"
+        keywords="KIIT doubt session, placement mentor session, KIIT alumni guidance, DSA doubt session, placement counseling KIIT"
+      />
       
       {/* ── Toast Notification ── */}
       <AnimatePresence>
