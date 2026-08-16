@@ -164,10 +164,10 @@ const INITIAL_RECRUITERS = [
 
 // Spotlight featured companies
 const FEATURED_SPOTLIGHT = [
-  { company: "HighRadius", ctc: "₹18.50 LPA", stipend: "₹45,000/mo", role: "Associate Software Engineer", batch: "2025-26 Batch", status: "Visiting Soon - Day 1", skills: ["Java", "Spring Boot", "React", "SQL"], badge: "Top Recruiter" },
-  { company: "Deloitte USI", ctc: "₹11.50 LPA", stipend: "₹35,000/mo", role: "Analyst - Tech Consulting", batch: "2025-26 Batch", status: "Registrations Open", skills: ["Cloud", "Python", "Consulting", "SQL"], badge: "Tier-1 Day 1" },
-  { company: "Microsoft", ctc: "₹51.00 LPA", stipend: "₹1,25,000/mo", role: "SDE-1", batch: "2025-26 Batch", status: "Shortlist Released", skills: ["C++", "System Design", "DP", "OS"], badge: "Dream Offer" },
-  { company: "PwC India", ctc: "₹9.00 LPA", stipend: "₹30,000/mo", role: "Cybersecurity Associate", batch: "2025-26 Batch", status: "Test Scheduled", skills: ["Linux", "Networks", "Python", "Security"], badge: "Fintech Risk" }
+  { company: "HighRadius", ctc: "₹18.50 LPA", stipend: "₹45,000/mo", role: "Associate Software Engineer", batch: "2026-27 Batch", status: "Visiting Soon - Day 1", skills: ["Java", "Spring Boot", "React", "SQL"], badge: "Top Recruiter" },
+  { company: "Deloitte USI", ctc: "₹11.50 LPA", stipend: "₹35,000/mo", role: "Analyst - Tech Consulting", batch: "2026-27 Batch", status: "Registrations Open", skills: ["Cloud", "Python", "Consulting", "SQL"], badge: "Tier-1 Day 1" },
+  { company: "Microsoft", ctc: "₹51.00 LPA", stipend: "₹1,25,000/mo", role: "SDE-1", batch: "2026-27 Batch", status: "Shortlist Released", skills: ["C++", "System Design", "DP", "OS"], badge: "Dream Offer" },
+  { company: "PwC India", ctc: "₹9.00 LPA", stipend: "₹30,000/mo", role: "Cybersecurity Associate", batch: "2026-27 Batch", status: "Test Scheduled", skills: ["Linux", "Networks", "Python", "Security"], badge: "Fintech Risk" }
 ];
 
 export default function KampusAceApp() {
@@ -563,7 +563,7 @@ export default function KampusAceApp() {
                     <KonarkWheel className="w-56 h-56 sm:w-72 sm:h-72" color="#0FA34E" />
                   </motion.div>
                   <div className="absolute bg-[#0FA34E] text-[#F6E9D2] font-display font-bold text-center px-4 py-2.5 rounded-full shadow-xl border-2 border-[#C6FF3D] text-xs sm:text-sm">
-                    KIIT Placement<br/><span className="text-[#C6FF3D] font-mono text-xs">Season 2025-26</span>
+                    KIIT Placement<br/><span className="text-[#C6FF3D] font-mono text-xs">Season 2026-27</span>
                   </div>
                 </div>
               </div>

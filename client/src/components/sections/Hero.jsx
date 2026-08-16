@@ -153,7 +153,7 @@ export default function Hero() {
             </motion.div>
             
             <div className="absolute bg-[#0FA34E] text-[#F6E9D2] font-display font-bold text-center px-4 py-2.5 rounded-full shadow-xl border-2 border-[#C6FF3D] text-xs sm:text-sm pointer-events-none">
-              KIIT Placement<br/><span className="text-[#C6FF3D] font-mono text-xs">Season 2025-26</span>
+              KIIT Placement<br/><span className="text-[#C6FF3D] font-mono text-xs">Season 2026-27</span>
             </div>
           </motion.div>
         </div>

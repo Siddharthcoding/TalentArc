@@ -52,13 +52,14 @@ export default function Footer() {
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-6 text-xs font-display font-bold text-[#F6E9D2]">
+          <div className="flex flex-wrap gap-5 text-xs font-display font-bold text-[#F6E9D2]">
             <Link to="/dashboard" className="hover:text-[#C6FF3D] transition-colors">ATS Checker</Link>
             <Link to="/jd-matcher" className="hover:text-[#C6FF3D] transition-colors">JD Matcher</Link>
             <Link to="/company-bank" className="hover:text-[#C6FF3D] transition-colors">Company Bank</Link>
             <Link to="/assessment" className="hover:text-[#C6FF3D] transition-colors">Mock Assessment</Link>
             <Link to="/resume-builder" className="hover:text-[#C6FF3D] transition-colors">Resume Builder</Link>
             <Link to="/doubt-sessions" className="hover:text-[#C6FF3D] transition-colors">Doubt Sessions</Link>
+            <Link to="/contact" className="text-[#C6FF3D] hover:underline transition-all">Help &amp; Contact</Link>
           </div>
         </div>
 

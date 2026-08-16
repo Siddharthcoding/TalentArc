@@ -30,7 +30,7 @@ const STATIONS = [
     badge: '40+ KIIT Recruiters',
     icon: Building2,
     color: '#0FA34E',
-    tagline: 'Actual round-by-round transcripts from KIIT 2024 & 2025 placed alumni',
+    tagline: 'Actual round-by-round transcripts from KIIT 2025 & 2026 placed alumni',
     description:
       'Stop studying blind. Access exact coding question archives, SQL schemas, aptitude patterns, and interview round breakdowns for HighRadius, Deloitte USI, Microsoft, PwC, Zscaler, and Amazon.',
     stats: [
@@ -45,7 +45,7 @@ const STATIONS = [
     ],
     ctaText: 'Explore Recruiter Bank',
     ctaLink: '/company-bank',
-    previewBadge: 'HighRadius & Microsoft 2025 OA Verified'
+    previewBadge: 'HighRadius & Microsoft 2026-27 OA Verified'
   },
   {
     id: 'mock_assessments',

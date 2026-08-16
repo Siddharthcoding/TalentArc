@@ -533,4 +533,84 @@ export async function sendQuestionContributionEmail({
   }
 }
 
+/**
+ * Send Contact / Help inquiry email to Admin
+ */
+export async function sendContactSupportEmail({ name, email, subject, category, message }) {
+  const adminRecipients = getAdminRecipients();
+  const pass = process.env.SMTP_PASS;
+
+  if (!pass || adminRecipients.length === 0) {
+    console.log(`[Email] Contact support message logged:`, { name, email, subject, category, message });
+    return;
+  }
+
+  const contentHtml = `
+    <!-- Status Pill -->
+    <div style="margin-bottom: 16px;">
+      <span style="display: inline-block; background-color: #FEF3C7; color: #B45309; border: 1px solid #FCD34D; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; padding: 4px 10px; border-radius: 9999px;">
+        📬 Help &amp; Contact Inquiry
+      </span>
+    </div>
+
+    <h2 style="margin: 0 0 12px; color: #0F172A; font-size: 20px; font-weight: 800;">
+      New Student Support Message 💬
+    </h2>
+    <p style="margin: 0 0 20px; color: #475569; font-size: 14px; line-height: 1.5;">
+      A student has submitted a support inquiry / feedback through the Kampus Ace Help desk:
+    </p>
+
+    <!-- Inquiry Details Card -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; margin-bottom: 20px;">
+      <tr>
+        <td style="padding: 12px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; color: #64748B; font-weight: 600; width: 130px;">Sender Name:</td>
+        <td style="padding: 12px 18px; border-bottom: 1px solid #E2E8F0; font-size: 14px; color: #0F172A; font-weight: 700;">${name || 'Anonymous Student'}</td>
+      </tr>
+      <tr>
+        <td style="padding: 12px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; color: #64748B; font-weight: 600;">Email Address:</td>
+        <td style="padding: 12px 18px; border-bottom: 1px solid #E2E8F0; font-size: 14px; color: #0FA34E; font-weight: 600;">
+          <a href="mailto:${email}" style="color: #0FA34E; text-decoration: underline;">${email}</a>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 12px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; color: #64748B; font-weight: 600;">Category:</td>
+        <td style="padding: 12px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; color: #1E293B; font-weight: 600;">${category || 'General Support'}</td>
+      </tr>
+      <tr>
+        <td style="padding: 12px 18px; font-size: 13px; color: #64748B; font-weight: 600;">Subject:</td>
+        <td style="padding: 12px 18px; font-size: 14px; color: #0F172A; font-weight: 700;">${subject || 'No Subject'}</td>
+      </tr>
+    </table>
+
+    <div style="background-color: #FFFFFF; border: 1.5px solid #E2E8F0; border-radius: 12px; padding: 18px; margin-bottom: 24px;">
+      <div style="font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Message Content:</div>
+      <div style="font-size: 14px; line-height: 1.6; color: #1E293B; white-space: pre-wrap;">${message}</div>
+    </div>
+
+    <div style="text-align: center;">
+      <a href="mailto:${email}?subject=Re: ${encodeURIComponent(subject || 'Kampus Ace Support Request')}" style="display: inline-block; background-color: #0FA34E; color: #FFFFFF; font-size: 14px; font-weight: 700; text-decoration: none; padding: 12px 28px; border-radius: 8px;">
+        Reply to Student &rarr;
+      </a>
+    </div>
+  `;
+
+  try {
+    const transporter = getTransporter();
+    await transporter.sendMail({
+      from: getSender('Kampus Ace Support Desk'),
+      replyTo: email,
+      to: adminRecipients.join(', '),
+      subject: `💬 [Support] ${subject || category || 'Student Inquiry'} (${name || email})`,
+      html: renderEmailWrapper({
+        headerTitle: `Support Message - ${subject || 'Inquiry'}`,
+        headerSubtitle: 'Help Desk & Student Contact',
+        contentHtml,
+      }),
+    });
+    console.log(`[Email] Contact message delivered to admin (${adminRecipients.join(', ')})`);
+  } catch (err) {
+    console.error('[Email] Failed to send contact message:', err.message);
+  }
+}
+
 

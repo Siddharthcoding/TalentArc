@@ -23,6 +23,7 @@ const CompanyBankAdmin   = lazy(() => import('@/pages/CompanyBankAdmin'));
 const ResumeBuilder      = lazy(() => import('@/pages/ResumeBuilder'));
 const DoubtSessions      = lazy(() => import('@/pages/DoubtSessions'));
 const DoubtSessionAdmin  = lazy(() => import('@/pages/DoubtSessionAdmin'));
+const ContactPage        = lazy(() => import('@/pages/ContactPage'));
 
 // ─── Loading fallback ─────────────────────────────────────────────────────────
 function PageLoader() {
@@ -143,6 +144,8 @@ export default function App() {
           <Route path="/doubt-admin"            element={<RequireAuth><DoubtSessionAdmin /></RequireAuth>} />
           <Route path="/features"               element={<FeaturesPage />} />
           <Route path="/pricing"                element={<PricingPage />} />
+          <Route path="/contact"                element={<ContactPage />} />
+          <Route path="/help"                   element={<ContactPage />} />
         </Route>
       </Routes>
     </Suspense>

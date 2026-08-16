@@ -1,5 +1,5 @@
 import pool from '../db/pool.js';
-import { sendBookingConfirmation, sendCancellationNotice, notifyAdminOfBooking, broadcastMeetLink } from '../services/email.service.js';
+import { sendBookingConfirmation, sendCancellationNotice, broadcastMeetLink } from '../services/email.service.js';
 
 // ─── Helper: is admin? ─────────────────────────────────────────────────────
 function isAdmin(user) {
@@ -125,14 +125,6 @@ export const bookDoubtSession = async (req, res) => {
         date: session.session_date,
         duration: session.duration,
         meetLink: session.meet_link,
-      }).catch(() => {});
-
-      // Notify admin (non-blocking)
-      notifyAdminOfBooking({
-        sessionTopic: session.topic,
-        studentEmail: userEmail,
-        studentName: userName,
-        mentorName: session.mentor,
       }).catch(() => {});
 
       return res.json({

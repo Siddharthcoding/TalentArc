@@ -261,6 +261,13 @@ export async function deleteDoubtPoll(pollId) {
   return data;
 }
 
+// ─── Contact & Support ────────────────────────────────────────────────────────
+
+export async function submitContactForm(payload) {
+  const { data } = await apiClient.post('/contact', payload);
+  return data;
+}
+
 export default apiClient;
 
 

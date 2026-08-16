@@ -65,7 +65,6 @@ export default function CompanyBank() {
     correctOption: 0,
     contributorName: "",
     contributorEmail: "",
-    contributorBatch: "B.Tech CSE '25",
   });
 
   useEffect(() => {
@@ -475,17 +474,19 @@ export default function CompanyBank() {
                     <input
                       value={formData.contributorName}
                       onChange={(e) => setFormData({ ...formData, contributorName: e.target.value })}
-                      placeholder="Your Name (or Leave Anonymous)"
+                      placeholder="Your Name (or Anonymous)"
                       style={inputStyle}
                     />
                   </div>
                   <div>
-                    <label style={labelStyle}>Branch & Batch</label>
+                    <label style={labelStyle}>Your Email Address *</label>
                     <input
-                      value={formData.contributorBatch}
-                      onChange={(e) => setFormData({ ...formData, contributorBatch: e.target.value })}
-                      placeholder="e.g. B.Tech CSE '25"
+                      type="email"
+                      value={formData.contributorEmail}
+                      onChange={(e) => setFormData({ ...formData, contributorEmail: e.target.value })}
+                      placeholder="student@kiit.ac.in"
                       style={inputStyle}
+                      required
                     />
                   </div>
                 </div>

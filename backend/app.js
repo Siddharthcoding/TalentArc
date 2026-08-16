@@ -9,6 +9,7 @@ import reportRoutes from "./routes/reports.routes.js";
 import assessmentRoutes from "./routes/assessment.routes.js";
 import companyBankRoutes from "./routes/companyBank.routes.js";
 import doubtRoutes from "./routes/doubt.routes.js";
+import contactRoutes from "./routes/contact.routes.js";
 import migrate from "./db/migrate.js";
 
 const app = express();
@@ -29,6 +30,7 @@ app.use("/api/assessments", assessmentRoutes);
 app.use("/api/company-bank", companyBankRoutes);
 app.use("/api/doubts", doubtRoutes);
 app.use("/api/doubt", doubtRoutes);
+app.use("/api/contact", contactRoutes);
 
 
 migrate().then(() => {

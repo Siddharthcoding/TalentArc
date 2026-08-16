@@ -12,7 +12,7 @@ export default function Home() {
         title="Kampus Ace — KIIT Campus Placement Hub"
         description="Beat placements at Microsoft, Amazon, HighRadius & Deloitte. ATS resume checker, verified company question banks, AI-powered mock tests, and live mentor doubt sessions — built for KIIT students."
         path="/"
-        keywords="KIIT placement 2025, KIIT campus placement, Kampus Ace, KIIT interview prep, KIIT ATS checker, HighRadius KIIT, Microsoft KIIT"
+        keywords="KIIT placement 2026-2027, KIIT campus placement 2026-27, Kampus Ace, KIIT interview prep, KIIT ATS checker, HighRadius KIIT, Microsoft KIIT"
         noSuffix
       />
       <Hero />

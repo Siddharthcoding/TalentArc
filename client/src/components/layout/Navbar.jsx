@@ -8,7 +8,7 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/utils/cn';
 
-const ADMIN_EMAILS = ['23052921@kiit.ac.in'];
+const ADMIN_EMAILS = ['23052921@kiit.ac.in', 'kampusace@gmail.com'];
 
 const KonarkWheel = ({ className = 'w-7 h-7', color = '#0FA34E' }) => (
   <svg className={className} viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -37,6 +37,7 @@ const navLinks = [
   { href: '/assessment', label: 'Mock Tests' },
   { href: '/resume-builder', label: 'Resume Builder' },
   { href: '/doubt-sessions', label: 'Doubt Sessions' },
+  { href: '/contact', label: 'Help' },
 ];
 
 function UserAvatar({ user, className }) {
@@ -129,7 +130,7 @@ export default function Navbar() {
             className="hidden sm:inline-flex items-center font-mono text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider"
             style={{ background: '#0FA34E', color: '#C6FF3D' }}
           >
-            '26
+            '27
           </span>
         </Link>
 
