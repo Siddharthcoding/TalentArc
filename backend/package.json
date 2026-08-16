@@ -12,6 +12,7 @@
     "test-phase4-llm": "node scripts/test-phase4-llm.js",
     "test-jd": "node scripts/test-jd-match.js",
     "test-e2e": "node scripts/test-e2e.js",
+    "migrate": "node db/migrate.js",
     "start": "node app.js"
   },
   "keywords": [],

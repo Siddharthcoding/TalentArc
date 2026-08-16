@@ -21,7 +21,8 @@ import {
   TrendingUp,
   MessageSquarePlus,
   X,
-  Award
+  Award,
+  GraduationCap
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
@@ -37,12 +38,12 @@ import { useAuth } from '@/context/AuthContext';
 import SEO from '@/components/SEO';
 
 const FALLBACK_SESSIONS = [
-  { id: 'doubt-1', mentor: 'Ananya Sharma', role: 'Placed at Microsoft (₹51.0 LPA)', batch: "KIIT CSE '24 Alum", topic: 'Cracking HighRadius & Microsoft Coding & Technical Rounds', date: 'Today, 7:00 PM IST', duration: '60 Mins', totalSeats: 15, bookedSeats: 12, tags: ['DSA', 'Interview Tips', 'System Design'], avatar: 'AS', meetLink: 'https://meet.google.com/kampus-ace-doubt-1' },
-  { id: 'doubt-2', mentor: 'Sourav Das', role: 'Placed at HighRadius (₹18.5 LPA)', batch: "KIIT IT '24 Alum", topic: 'HighRadius OA & SQL Live Query Masterclass + Capstone Tips', date: 'Tomorrow, 6:30 PM IST', duration: '90 Mins', totalSeats: 20, bookedSeats: 16, tags: ['HighRadius', 'SQL', 'Java'], avatar: 'SD', meetLink: 'https://meet.google.com/kampus-ace-doubt-2' },
-  { id: 'doubt-3', mentor: 'Priyanka Sahoo', role: 'Placed at Deloitte USI (₹11.5 LPA)', batch: "KIIT ECE '24 Alum", topic: 'Deloitte Case Studies & AMCAT Aptitude Fast Tricks', date: 'Sat, 16 Aug - 5:00 PM', duration: '60 Mins', totalSeats: 15, bookedSeats: 11, tags: ['Deloitte', 'Aptitude', 'GD'], avatar: 'PS', meetLink: 'https://meet.google.com/kampus-ace-doubt-3' },
-  { id: 'doubt-4', mentor: 'Rohan Mohanty', role: 'Placed at Zscaler (₹28.0 LPA)', batch: "KIIT CSE '24 Alum", topic: 'Low-Level System Design & C++ Pointers / Multithreading', date: 'Sun, 17 Aug - 4:00 PM', duration: '75 Mins', totalSeats: 12, bookedSeats: 9, tags: ['Zscaler', 'LLD', 'OS'], avatar: 'RM', meetLink: 'https://meet.google.com/kampus-ace-doubt-4' },
-  { id: 'doubt-5', mentor: 'Subhashree Jena', role: 'Placed at PwC India (₹9.0 LPA)', batch: "KIIT CSSE '24 Alum", topic: 'Resume & Portfolio Review - Live 1-on-1 Grill Session', date: 'Mon, 18 Aug - 8:00 PM', duration: '60 Mins', totalSeats: 10, bookedSeats: 7, tags: ['Resume', 'HR', 'Cybersecurity'], avatar: 'SJ', meetLink: 'https://meet.google.com/kampus-ace-doubt-5' },
-  { id: 'doubt-6', mentor: 'Aman Patnaik', role: 'Placed at Amazon (₹45.0 LPA)', batch: "KIIT CSE '23 Alum", topic: 'Amazon Leadership Principles & DP Optimization Tricks', date: 'Tue, 19 Aug - 7:30 PM', duration: '90 Mins', totalSeats: 15, bookedSeats: 14, tags: ['Amazon', 'DP', 'Behavioral'], avatar: 'AP', meetLink: 'https://meet.google.com/kampus-ace-doubt-6' },
+  { id: 'doubt-1', mentor: 'SDE at Microsoft', role: 'SDE at Microsoft (₹51.0 LPA)', batch: "KIIT CSE '24 Alum", topic: 'Cracking HighRadius & Microsoft Coding & Technical Rounds', date: 'Today, 7:00 PM IST', duration: '60 Mins', totalSeats: 15, bookedSeats: 12, tags: ['DSA', 'Interview Tips', 'System Design'], avatar: 'MS', meetLink: 'https://meet.google.com/kampus-ace-doubt-1' },
+  { id: 'doubt-2', mentor: 'SDE at HighRadius', role: 'SDE at HighRadius (₹18.5 LPA)', batch: "KIIT IT '24 Alum", topic: 'HighRadius OA & SQL Live Query Masterclass + Capstone Tips', date: 'Tomorrow, 6:30 PM IST', duration: '90 Mins', totalSeats: 20, bookedSeats: 16, tags: ['HighRadius', 'SQL', 'Java'], avatar: 'HR', meetLink: 'https://meet.google.com/kampus-ace-doubt-2' },
+  { id: 'doubt-3', mentor: 'Consultant at Deloitte', role: 'Consultant at Deloitte USI (₹11.5 LPA)', batch: "KIIT ECE '24 Alum", topic: 'Deloitte Case Studies & AMCAT Aptitude Fast Tricks', date: 'Sat, 16 Aug - 5:00 PM', duration: '60 Mins', totalSeats: 15, bookedSeats: 11, tags: ['Deloitte', 'Aptitude', 'GD'], avatar: 'DL', meetLink: 'https://meet.google.com/kampus-ace-doubt-3' },
+  { id: 'doubt-4', mentor: 'Security Engineer at Zscaler', role: 'Security Engineer at Zscaler (₹28.0 LPA)', batch: "KIIT CSE '24 Alum", topic: 'Low-Level System Design & C++ Pointers / Multithreading', date: 'Sun, 17 Aug - 4:00 PM', duration: '75 Mins', totalSeats: 12, bookedSeats: 9, tags: ['Zscaler', 'LLD', 'OS'], avatar: 'ZS', meetLink: 'https://meet.google.com/kampus-ace-doubt-4' },
+  { id: 'doubt-5', mentor: 'Associate at PwC', role: 'Associate at PwC India (₹9.0 LPA)', batch: "KIIT CSSE '24 Alum", topic: 'Resume & Portfolio Review - Live 1-on-1 Grill Session', date: 'Mon, 18 Aug - 8:00 PM', duration: '60 Mins', totalSeats: 10, bookedSeats: 7, tags: ['Resume', 'HR', 'Cybersecurity'], avatar: 'PW', meetLink: 'https://meet.google.com/kampus-ace-doubt-5' },
+  { id: 'doubt-6', mentor: 'SDE at Amazon', role: 'SDE at Amazon (₹45.0 LPA)', batch: "KIIT CSE '23 Alum", topic: 'Amazon Leadership Principles & DP Optimization Tricks', date: 'Tue, 19 Aug - 7:30 PM', duration: '90 Mins', totalSeats: 15, bookedSeats: 14, tags: ['Amazon', 'DP', 'Behavioral'], avatar: 'AZ', meetLink: 'https://meet.google.com/kampus-ace-doubt-6' },
 ];
 
 const ADMIN_EMAILS = ['23052921@kiit.ac.in'];
@@ -356,16 +357,24 @@ export default function DoubtSessions() {
                   <div className="space-y-4">
                     <div className="flex items-center gap-3">
                       <div
-                        className="w-12 h-12 rounded-2xl flex items-center justify-center text-lg font-extrabold shadow shrink-0"
-                        style={{ background: '#0FA34E', color: '#D7F27A', fontFamily: '"Baloo 2", cursive' }}
+                        className="w-12 h-12 rounded-2xl flex items-center justify-center shadow shrink-0"
+                        style={{ background: '#0FA34E', color: '#D7F27A' }}
                       >
-                        {session.avatar}
+                        <GraduationCap className="w-6 h-6" />
                       </div>
-                      <div className="min-w-0">
-                        <h3 className="font-extrabold text-lg leading-tight truncate" style={{ fontFamily: '"Baloo 2", cursive', color: '#0FA34E' }}>
-                          {session.mentor}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <span className="inline-flex items-center gap-1 text-[9.5px] font-mono font-black px-2 py-0.5 rounded-full bg-[#0FA34E] text-[#C6FF3D]">
+                            <Sparkles className="w-2.5 h-2.5" />
+                            VERIFIED ALUM
+                          </span>
+                        </div>
+                        <h3 className="font-extrabold text-base leading-tight truncate" style={{ fontFamily: '"Baloo 2", cursive', color: '#0FA34E' }}>
+                          {session.role || session.mentor || 'Placement Mentor'}
                         </h3>
-                        <p className="text-xs font-bold truncate" style={{ color: '#0B7C3C' }}>{session.role}</p>
+                        <p className="text-xs font-semibold truncate mt-0.5" style={{ color: '#0B7C3C' }}>
+                          {session.batch || 'KIIT Alum'}
+                        </p>
                       </div>
                       {session.isBooked && (
                         <span className="ml-auto shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold shadow-sm"

@@ -26,9 +26,10 @@ export const getDoubtSessions = async (req, res) => {
       bookingsRes.rows.forEach((r) => bookedIds.add(r.session_id));
     }
 
+    const isUserAdmin = isAdmin(req.user);
     const data = sessionsRes.rows.map((s) => ({
       id: s.id,
-      mentor: s.mentor,
+      mentor: isUserAdmin ? s.mentor : (s.role || 'Verified Mentor'),
       role: s.role,
       batch: s.batch,
       topic: s.topic,
@@ -119,7 +120,8 @@ export const bookDoubtSession = async (req, res) => {
         to: userEmail,
         studentName: userName,
         sessionTopic: session.topic,
-        mentor: session.mentor,
+        mentorRole: session.role || 'Verified Placement Mentor',
+        batch: session.batch,
         date: session.session_date,
         duration: session.duration,
         meetLink: session.meet_link,
@@ -228,7 +230,8 @@ export const updateDoubtSession = async (req, res) => {
       broadcastMeetLink({
         students: studentsRes.rows,
         sessionTopic: updated.topic,
-        mentor: updated.mentor,
+        mentorRole: updated.role || 'Verified Placement Mentor',
+        batch: updated.batch,
         date: updated.session_date,
         meetLink: updated.meet_link,
       }).catch(() => {});

@@ -1,3 +1,4 @@
+import "dotenv/config";
 import pool from "./pool.js";
 
 const ENABLE_UUID_EXTENSION = `CREATE EXTENSION IF NOT EXISTS pgcrypto;`;
@@ -307,4 +308,18 @@ export default async function migrate() {
   } finally {
     client.release();
   }
+}
+
+if (process.argv[1] && process.argv[1].replace(/\\/g, '/').endsWith("db/migrate.js")) {
+  migrate()
+    .then(async () => {
+      console.log("Migration executed directly: SUCCESS");
+      await pool.end();
+      process.exit(0);
+    })
+    .catch(async (err) => {
+      console.error("Migration executed directly: FAILED", err);
+      await pool.end();
+      process.exit(1);
+    });
 }

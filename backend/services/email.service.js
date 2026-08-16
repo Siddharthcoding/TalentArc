@@ -1,56 +1,235 @@
+import "dotenv/config";
 import nodemailer from 'nodemailer';
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: false,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 
 /**
- * Send booking confirmation with meet link to student
+ * Returns a configured Nodemailer transporter
  */
-export async function sendBookingConfirmation({ to, studentName, sessionTopic, mentor, date, duration, meetLink }) {
-  if (!process.env.SMTP_USER) {
-    console.log('[Email] SMTP not configured - skipping booking confirmation');
-    return;
+function getTransporter() {
+  const host = process.env.SMTP_HOST || 'smtp.gmail.com';
+  const port = parseInt(process.env.SMTP_PORT || '587', 10);
+  const user = process.env.SMTP_USER || 'kampusace@gmail.com';
+  const pass = process.env.SMTP_PASS || '';
+
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: user && pass ? { user, pass } : undefined,
+  });
+}
+
+/**
+ * Helper to get formatted sender address
+ */
+function getSender(displayName = 'Kampus Ace') {
+  const senderEmail = process.env.SMTP_FROM || process.env.SMTP_USER || 'kampusace@gmail.com';
+  return `"${displayName}" <${senderEmail}>`;
+}
+
+/**
+ * Helper to get list of admin recipient emails
+ */
+function getAdminRecipients() {
+  const list = (process.env.ADMIN_EMAILS || '')
+    .split(',')
+    .map((e) => e.trim())
+    .filter(Boolean);
+  return list.length > 0 ? list : ['kampusace@gmail.com'];
+}
+
+/**
+ * Verify SMTP connection status
+ */
+export async function verifySmtpConnection() {
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    return {
+      connected: false,
+      message: 'SMTP_USER or SMTP_PASS is missing in .env. Outgoing emails will be logged only.'
+    };
   }
   try {
+    const transporter = getTransporter();
+    await transporter.verify();
+    return { connected: true, message: 'SMTP transporter verified successfully.' };
+  } catch (err) {
+    return { connected: false, message: err.message };
+  }
+}
+
+/**
+ * Helper: Reusable Base Email Layout Wrapper
+ */
+function renderEmailWrapper({ headerTitle = 'Kampus Ace', headerSubtitle = 'KIIT Placement Prep Hub', contentHtml }) {
+  return `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>${headerTitle}</title>
+    </head>
+    <body style="margin: 0; padding: 0; background-color: #F1F5F9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #1E293B;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #F1F5F9; padding: 32px 16px;">
+        <tr>
+          <td align="center">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 580px; background-color: #FFFFFF; border-radius: 16px; overflow: hidden; border: 1px solid #E2E8F0; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">
+              
+              <!-- Brand Header -->
+              <tr>
+                <td style="background: linear-gradient(135deg, #0A6C35 0%, #0FA34E 100%); padding: 24px 32px; border-bottom: 3px solid #D7F27A;">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td>
+                        <h1 style="margin: 0; color: #FFFFFF; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;">
+                          Kampus<span style="color: #D7F27A;">Ace</span>
+                        </h1>
+                        <p style="margin: 4px 0 0; color: #DFF5E6; font-size: 13px; font-weight: 500; letter-spacing: 0.2px;">
+                          ${headerSubtitle}
+                        </p>
+                      </td>
+                      <td align="right">
+                        <span style="display: inline-block; background: rgba(215, 242, 122, 0.18); border: 1px solid rgba(215, 242, 122, 0.4); color: #D7F27A; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; padding: 5px 12px; border-radius: 20px;">
+                          Verified Session
+                        </span>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+
+              <!-- Email Body Content -->
+              <tr>
+                <td style="padding: 32px 28px;">
+                  ${contentHtml}
+                </td>
+              </tr>
+
+              <!-- Modern Footer -->
+              <tr>
+                <td style="background-color: #F8FAFC; padding: 24px 28px; border-top: 1px solid #E2E8F0; text-align: center;">
+                  <p style="margin: 0 0 8px; color: #64748B; font-size: 12px; line-height: 1.5;">
+                    Need help or want to reschedule? Visit <a href="${FRONTEND_URL}/doubts" style="color: #0FA34E; text-decoration: underline; font-weight: 600;">Doubt Sessions</a> on Kampus Ace.
+                  </p>
+                  <p style="margin: 0; color: #94A3B8; font-size: 11px;">
+                    © ${new Date().getFullYear()} Kampus Ace • KIIT University Placement Assistance
+                  </p>
+                </td>
+              </tr>
+
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
+}
+
+/**
+ * Send booking confirmation with meet link to student (Mentor name replaced with role / company)
+ */
+export async function sendBookingConfirmation({ to, studentName, sessionTopic, mentor, mentorRole, batch, date, duration, meetLink }) {
+  const pass = process.env.SMTP_PASS;
+  if (!pass) {
+    console.log(`[Email] SMTP_PASS not set — skipping real delivery of booking confirmation to ${to}.`);
+    return;
+  }
+
+  // Use mentor role / company description instead of mentor name
+  const mentorDisplay = mentorRole || (mentor && !mentor.includes('@') ? mentor : 'Verified Placement Mentor');
+  const mentorBatchInfo = batch ? `<span style="display:inline-block; margin-left: 6px; color: #64748B; font-size: 12px; font-weight: 500;">(${batch})</span>` : '';
+
+  const contentHtml = `
+    <!-- Status Pill -->
+    <div style="margin-bottom: 20px;">
+      <span style="display: inline-block; background-color: #DCFCE7; color: #15803D; border: 1px solid #86EFAC; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; padding: 5px 12px; border-radius: 9999px;">
+        ✓ Booking Confirmed
+      </span>
+    </div>
+
+    <h2 style="margin: 0 0 10px; color: #0F172A; font-size: 22px; font-weight: 800; line-height: 1.3;">
+      Your Doubt Clearing Slot is Locked! 🎉
+    </h2>
+    <p style="margin: 0 0 24px; color: #475569; font-size: 15px; line-height: 1.6;">
+      Hi <strong>${studentName || 'there'}</strong>, you're all set for your upcoming 1-on-1 / small-batch doubt session. Here is your session schedule:
+    </p>
+
+    <!-- Session Details Card -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; margin-bottom: 24px; overflow: hidden;">
+      <tr>
+        <td style="padding: 16px 20px; border-bottom: 1px solid #E2E8F0;">
+          <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #64748B; letter-spacing: 0.5px; margin-bottom: 4px;">Topic / Focus Area</div>
+          <div style="font-size: 15px; font-weight: 700; color: #0F172A;">${sessionTopic}</div>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 16px 20px; border-bottom: 1px solid #E2E8F0;">
+          <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #64748B; letter-spacing: 0.5px; margin-bottom: 4px;">Mentor Profile</div>
+          <div style="font-size: 14px; font-weight: 600; color: #0FA34E;">
+            👨‍💼 ${mentorDisplay} ${mentorBatchInfo}
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 16px 20px; border-bottom: 1px solid #E2E8F0;">
+          <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #64748B; letter-spacing: 0.5px; margin-bottom: 4px;">Date &amp; Time</div>
+          <div style="font-size: 14px; font-weight: 600; color: #0F172A;">📅 ${date}</div>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 16px 20px;">
+          <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #64748B; letter-spacing: 0.5px; margin-bottom: 4px;">Session Duration</div>
+          <div style="font-size: 14px; font-weight: 600; color: #0F172A;">⏱ ${duration || '60 Mins'}</div>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Meet Link Action Card -->
+    ${meetLink ? `
+      <div style="background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%); border: 1.5px solid #86EFAC; border-radius: 12px; padding: 24px 20px; text-align: center; margin-bottom: 24px;">
+        <div style="font-size: 12px; font-weight: 800; color: #15803D; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px;">
+          🔗 Official Google Meet Link
+        </div>
+        <a href="${meetLink}" target="_blank" style="display: inline-block; background-color: #0FA34E; color: #FFFFFF; font-size: 15px; font-weight: 700; text-decoration: none; padding: 13px 28px; border-radius: 10px; box-shadow: 0 4px 10px rgba(15, 163, 78, 0.25); margin-bottom: 12px;">
+          Join Google Meet &rarr;
+        </a>
+        <div style="font-size: 12px; color: #64748B; word-break: break-all;">
+          Or copy URL: <a href="${meetLink}" style="color: #0FA34E; text-decoration: underline;">${meetLink}</a>
+        </div>
+      </div>
+    ` : `
+      <div style="background-color: #FEF3C7; border: 1.5px solid #FCD34D; border-radius: 12px; padding: 18px 20px; text-align: center; margin-bottom: 24px;">
+        <p style="margin: 0; color: #92400E; font-size: 13.5px; font-weight: 600; line-height: 1.5;">
+          ⚡ The mentor is setting up the Google Meet link. It will be emailed to you before the session starts.
+        </p>
+      </div>
+    `}
+
+    <!-- Helpful Preparation Tips -->
+    <div style="background-color: #F8FAFC; border-radius: 12px; padding: 18px 20px; margin-bottom: 16px;">
+      <div style="font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 8px;">
+        💡 Quick Prep Checklist:
+      </div>
+      <ul style="margin: 0; padding-left: 20px; color: #64748B; font-size: 13px; line-height: 1.6;">
+        <li>Keep your coding questions, tricky problems, or resume sections open.</li>
+        <li>Check your microphone and video connection a few minutes before start.</li>
+        <li>Join promptly at the scheduled time to maximize 1-on-1 interaction.</li>
+      </ul>
+    </div>
+  `;
+
+  try {
+    const transporter = getTransporter();
     await transporter.sendMail({
-      from: `"Kampus Ace" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+      from: getSender('Kampus Ace Sessions'),
       to,
       subject: `✅ Slot Confirmed: ${sessionTopic}`,
-      html: `
-        <div style="font-family:Inter,sans-serif;max-width:600px;margin:0 auto;background:#F6E9D2;padding:32px;border-radius:20px">
-          <div style="background:#0FA34E;padding:20px 24px;border-radius:14px;margin-bottom:24px">
-            <h1 style="color:#D7F27A;margin:0;font-size:24px;font-weight:900;font-family:serif">Kampus Ace</h1>
-            <p style="color:#DFF5E6;margin:4px 0 0;font-size:13px">KIIT Campus Placement Hub</p>
-          </div>
-          <h2 style="color:#0B7C3C;font-size:22px;margin:0 0 8px">Your slot is confirmed! 🎉</h2>
-          <p style="color:#0B7C3C;font-size:14px">Hi <strong>${studentName || 'there'}</strong>,</p>
-          <p style="color:#0B7C3C;font-size:14px">You've successfully booked a doubt session. Here are your details:</p>
-          <div style="background:#DFF5E6;border:2px solid #0FA34E33;border-radius:14px;padding:18px;margin:16px 0">
-            <p style="margin:7px 0;font-size:14px;color:#0B7C3C"><strong>📚 Topic:</strong> ${sessionTopic}</p>
-            <p style="margin:7px 0;font-size:14px;color:#0B7C3C"><strong>👨‍🏫 Mentor:</strong> ${mentor}</p>
-            <p style="margin:7px 0;font-size:14px;color:#0B7C3C"><strong>📅 Date &amp; Time:</strong> ${date}</p>
-            <p style="margin:7px 0;font-size:14px;color:#0B7C3C"><strong>⏱ Duration:</strong> ${duration}</p>
-          </div>
-          ${meetLink ? `
-          <div style="background:#0FA34E;border-radius:14px;padding:18px;margin:16px 0;text-align:center">
-            <p style="color:#D7F27A;margin:0 0 10px;font-size:12px;font-weight:900;letter-spacing:1px;text-transform:uppercase">🔗 YOUR GOOGLE MEET LINK</p>
-            <a href="${meetLink}" style="color:#C6FF3D;font-weight:900;font-size:16px;text-decoration:none;word-break:break-all">${meetLink}</a>
-          </div>` : `
-          <div style="background:#E8A33D22;border:2px solid #E8A33D44;border-radius:14px;padding:18px;margin:16px 0;text-align:center">
-            <p style="color:#E8A33D;margin:0;font-size:13px;font-weight:700">⚡ Meet link will be shared closer to the session date via email.</p>
-          </div>`}
-          <p style="color:#0B7C3C;font-size:12px;margin-top:24px">Come prepared with your questions. Best of luck! 🌿</p>
-          <hr style="border:none;border-top:1px solid #0FA34E22;margin:20px 0" />
-          <p style="color:#0B7C3C66;font-size:11px">Kampus Ace — KIIT Placement Prep Hub</p>
-        </div>
-      `,
+      html: renderEmailWrapper({
+        headerTitle: `Slot Confirmed - ${sessionTopic}`,
+        contentHtml,
+      }),
     });
     console.log(`[Email] Booking confirmation sent to ${to}`);
   } catch (err) {
@@ -62,23 +241,47 @@ export async function sendBookingConfirmation({ to, studentName, sessionTopic, m
  * Send cancellation notice to student
  */
 export async function sendCancellationNotice({ to, studentName, sessionTopic }) {
-  if (!process.env.SMTP_USER) return;
+  const pass = process.env.SMTP_PASS;
+  if (!pass) {
+    console.log(`[Email] SMTP_PASS not set — skipping cancellation notice to ${to}`);
+    return;
+  }
+
+  const contentHtml = `
+    <!-- Status Pill -->
+    <div style="margin-bottom: 20px;">
+      <span style="display: inline-block; background-color: #FEE2E2; color: #DC2626; border: 1px solid #FCA5A5; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; padding: 5px 12px; border-radius: 9999px;">
+        ✕ Booking Cancelled
+      </span>
+    </div>
+
+    <h2 style="margin: 0 0 10px; color: #0F172A; font-size: 22px; font-weight: 800; line-height: 1.3;">
+      Your Session Booking Was Cancelled
+    </h2>
+    <p style="margin: 0 0 20px; color: #475569; font-size: 15px; line-height: 1.6;">
+      Hi <strong>${studentName || 'there'}</strong>, your booking for <strong>${sessionTopic}</strong> has been cancelled and your seat has been released for other students.
+    </p>
+
+    <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; margin-bottom: 24px; text-align: center;">
+      <p style="margin: 0 0 16px; color: #64748B; font-size: 14px;">
+        Looking for other upcoming sessions or different topics?
+      </p>
+      <a href="${FRONTEND_URL}/doubts" target="_blank" style="display: inline-block; background-color: #0FA34E; color: #FFFFFF; font-size: 14px; font-weight: 700; text-decoration: none; padding: 12px 24px; border-radius: 10px;">
+        Browse Doubt Sessions &rarr;
+      </a>
+    </div>
+  `;
+
   try {
+    const transporter = getTransporter();
     await transporter.sendMail({
-      from: `"Kampus Ace" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+      from: getSender('Kampus Ace Sessions'),
       to,
       subject: `❌ Booking Cancelled: ${sessionTopic}`,
-      html: `
-        <div style="font-family:Inter,sans-serif;max-width:600px;margin:0 auto;background:#F6E9D2;padding:32px;border-radius:20px">
-          <div style="background:#0B7C3C;padding:20px 24px;border-radius:14px;margin-bottom:24px">
-            <h1 style="color:#D7F27A;margin:0;font-size:24px;font-weight:900">Kampus Ace</h1>
-          </div>
-          <h2 style="color:#E1584A;font-size:20px;margin:0 0 8px">Booking Cancelled</h2>
-          <p style="color:#0B7C3C;font-size:14px">Hi <strong>${studentName || 'there'}</strong>,</p>
-          <p style="color:#0B7C3C;font-size:14px">Your booking for <strong>${sessionTopic}</strong> has been cancelled. Your seat has been released for others.</p>
-          <p style="color:#0B7C3C;font-size:14px">You can re-book this or any other session anytime from the Doubt Sessions page on Kampus Ace.</p>
-        </div>
-      `,
+      html: renderEmailWrapper({
+        headerTitle: `Booking Cancelled - ${sessionTopic}`,
+        contentHtml,
+      }),
     });
     console.log(`[Email] Cancellation notice sent to ${to}`);
   } catch (err) {
@@ -87,60 +290,126 @@ export async function sendCancellationNotice({ to, studentName, sessionTopic }) 
 }
 
 /**
- * Notify admin when a new booking comes in
- */
-export async function notifyAdminOfBooking({ sessionTopic, studentEmail, studentName, mentorName }) {
-  const adminEmail = process.env.ADMIN_EMAILS;
-  if (!process.env.SMTP_USER || !adminEmail) return;
-  try {
-    await transporter.sendMail({
-      from: `"Kampus Ace" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
-      to: adminEmail,
-      subject: `📥 New Booking: ${sessionTopic}`,
-      html: `
-        <div style="font-family:Inter,sans-serif;max-width:500px;margin:0 auto;background:#F6E9D2;padding:24px;border-radius:16px">
-          <h2 style="color:#0FA34E;margin:0 0 12px">New Session Booking</h2>
-          <p style="color:#0B7C3C;font-size:14px"><strong>Session:</strong> ${sessionTopic}</p>
-          <p style="color:#0B7C3C;font-size:14px"><strong>Mentor:</strong> ${mentorName}</p>
-          <p style="color:#0B7C3C;font-size:14px"><strong>Student:</strong> ${studentName} (${studentEmail})</p>
-        </div>
-      `,
-    });
-  } catch (err) {
-    console.error('[Email] Admin notification failed:', err.message);
-  }
-}
-
-/**
  * Broadcast updated meet link to all enrolled students
  */
-export async function broadcastMeetLink({ students, sessionTopic, mentor, date, meetLink }) {
-  if (!process.env.SMTP_USER || !students?.length) return;
+export async function broadcastMeetLink({ students, sessionTopic, mentor, mentorRole, batch, date, meetLink }) {
+  const pass = process.env.SMTP_PASS;
+  if (!pass || !students?.length) return;
+
+  const mentorDisplay = mentorRole || (mentor && !mentor.includes('@') ? mentor : 'Verified Placement Mentor');
+  const mentorBatchInfo = batch ? `(${batch})` : '';
+
   try {
+    const transporter = getTransporter();
     for (const student of students) {
-      await transporter.sendMail({
-        from: `"Kampus Ace" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
-        to: student.email,
-        subject: `🔗 Meet Link Updated: ${sessionTopic}`,
-        html: `
-          <div style="font-family:Inter,sans-serif;max-width:600px;margin:0 auto;background:#F6E9D2;padding:32px;border-radius:20px">
-            <div style="background:#0FA34E;padding:18px 24px;border-radius:14px;margin-bottom:20px">
-              <h1 style="color:#D7F27A;margin:0;font-size:22px;font-weight:900">Kampus Ace</h1>
-            </div>
-            <h2 style="color:#0B7C3C">Your Meet Link is Ready! 🚀</h2>
-            <p style="color:#0B7C3C;font-size:14px">Hi <strong>${student.display_name || 'there'}</strong>, the Google Meet link for your upcoming session is confirmed:</p>
-            <p style="color:#0B7C3C;font-size:14px"><strong>📚 Session:</strong> ${sessionTopic}<br/><strong>👨‍🏫 Mentor:</strong> ${mentor}<br/><strong>📅 Date:</strong> ${date}</p>
-            <div style="background:#0FA34E;border-radius:14px;padding:18px;margin-top:16px;text-align:center">
-              <p style="color:#D7F27A;margin:0 0 8px;font-size:12px;font-weight:900;text-transform:uppercase">🔗 Your Google Meet Link</p>
-              <a href="${meetLink}" style="color:#C6FF3D;font-weight:900;font-size:15px;word-break:break-all">${meetLink}</a>
-            </div>
+      if (!student.email) continue;
+
+      const contentHtml = `
+        <!-- Status Pill -->
+        <div style="margin-bottom: 20px;">
+          <span style="display: inline-block; background-color: #DCFCE7; color: #15803D; border: 1px solid #86EFAC; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; padding: 5px 12px; border-radius: 9999px;">
+            🔗 Meet Link Ready
+          </span>
+        </div>
+
+        <h2 style="margin: 0 0 10px; color: #0F172A; font-size: 22px; font-weight: 800; line-height: 1.3;">
+          Google Meet Link is Live! 🚀
+        </h2>
+        <p style="margin: 0 0 24px; color: #475569; font-size: 15px; line-height: 1.6;">
+          Hi <strong>${student.display_name || 'there'}</strong>, the Google Meet link for your upcoming doubt session is ready.
+        </p>
+
+        <!-- Session Recap Box -->
+        <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 18px 20px; margin-bottom: 24px;">
+          <div style="font-size: 14px; font-weight: 700; color: #0F172A; margin-bottom: 6px;">📚 ${sessionTopic}</div>
+          <div style="font-size: 13px; color: #0FA34E; font-weight: 600; margin-bottom: 4px;">👨‍💼 ${mentorDisplay} ${mentorBatchInfo}</div>
+          <div style="font-size: 13px; color: #64748B;">📅 ${date}</div>
+        </div>
+
+        <!-- Meet Button -->
+        <div style="background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%); border: 1.5px solid #86EFAC; border-radius: 12px; padding: 24px 20px; text-align: center; margin-bottom: 20px;">
+          <a href="${meetLink}" target="_blank" style="display: inline-block; background-color: #0FA34E; color: #FFFFFF; font-size: 15px; font-weight: 700; text-decoration: none; padding: 14px 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(15, 163, 78, 0.25); margin-bottom: 12px;">
+            Join Google Meet Room &rarr;
+          </a>
+          <div style="font-size: 12px; color: #64748B; word-break: break-all;">
+            Link: <a href="${meetLink}" style="color: #0FA34E; text-decoration: underline;">${meetLink}</a>
           </div>
-        `,
+        </div>
+      `;
+
+      await transporter.sendMail({
+        from: getSender('Kampus Ace Sessions'),
+        to: student.email,
+        subject: `🔗 Meet Link Ready: ${sessionTopic}`,
+        html: renderEmailWrapper({
+          headerTitle: `Meet Link Ready - ${sessionTopic}`,
+          contentHtml,
+        }),
       });
     }
     console.log(`[Email] Meet link broadcast sent to ${students.length} students`);
   } catch (err) {
     console.error('[Email] Broadcast failed:', err.message);
+  }
+}
+
+/**
+ * Notify admin when a new booking comes in
+ */
+export async function notifyAdminOfBooking({ sessionTopic, studentEmail, studentName, mentorName }) {
+  const adminRecipients = getAdminRecipients();
+  const pass = process.env.SMTP_PASS;
+  if (!pass || adminRecipients.length === 0) return;
+
+  const contentHtml = `
+    <!-- Status Pill -->
+    <div style="margin-bottom: 16px;">
+      <span style="display: inline-block; background-color: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; padding: 4px 10px; border-radius: 9999px;">
+        Admin Alert • New Enrollment
+      </span>
+    </div>
+
+    <h2 style="margin: 0 0 16px; color: #0F172A; font-size: 20px; font-weight: 800;">
+      New Session Booking Received 📥
+    </h2>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; margin-bottom: 20px;">
+      <tr>
+        <td style="padding: 14px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; color: #64748B; font-weight: 600; width: 120px;">Session:</td>
+        <td style="padding: 14px 18px; border-bottom: 1px solid #E2E8F0; font-size: 14px; color: #0F172A; font-weight: 700;">${sessionTopic}</td>
+      </tr>
+      <tr>
+        <td style="padding: 14px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; color: #64748B; font-weight: 600;">Mentor:</td>
+        <td style="padding: 14px 18px; border-bottom: 1px solid #E2E8F0; font-size: 14px; color: #0FA34E; font-weight: 600;">${mentorName || 'Assigned Mentor'}</td>
+      </tr>
+      <tr>
+        <td style="padding: 14px 18px; font-size: 13px; color: #64748B; font-weight: 600;">Student:</td>
+        <td style="padding: 14px 18px; font-size: 14px; color: #0F172A; font-weight: 600;">${studentName || 'Student'} (${studentEmail})</td>
+      </tr>
+    </table>
+
+    <div style="text-align: center;">
+      <a href="${FRONTEND_URL}/doubts" target="_blank" style="display: inline-block; background-color: #0FA34E; color: #FFFFFF; font-size: 13px; font-weight: 700; text-decoration: none; padding: 10px 22px; border-radius: 8px;">
+        Manage Sessions in Admin Panel &rarr;
+      </a>
+    </div>
+  `;
+
+  try {
+    const transporter = getTransporter();
+    await transporter.sendMail({
+      from: getSender('Kampus Ace Admin Alerts'),
+      to: adminRecipients.join(', '),
+      subject: `📥 New Booking: ${sessionTopic} (${studentName || studentEmail})`,
+      html: renderEmailWrapper({
+        headerTitle: `New Booking - ${sessionTopic}`,
+        headerSubtitle: 'Admin Dashboard Notification',
+        contentHtml,
+      }),
+    });
+    console.log(`[Email] Booking notification sent to admin (${adminRecipients.join(', ')})`);
+  } catch (err) {
+    console.error('[Email] Admin notification failed:', err.message);
   }
 }
 
@@ -162,80 +431,103 @@ export async function sendQuestionContributionEmail({
   contributorEmail,
   contributorBatch
 }) {
-  const adminEmail = process.env.ADMIN_EMAILS;
-  if (!process.env.SMTP_USER || !adminEmail) {
-    console.log(`[Email] SMTP or ADMIN_EMAILS not configured. Question contribution logged:`, {
-      companyName,
-      questionTitle,
-      image_url,
-      contributorEmail
-    });
+  const adminRecipients = getAdminRecipients();
+  const pass = process.env.SMTP_PASS;
+
+  if (!pass || adminRecipients.length === 0) {
+    console.log(`[Email] Question contribution logged:`, { companyName, questionTitle, image_url, contributorEmail });
     return;
   }
 
   try {
     const formattedOptions = Array.isArray(options) && options.length
-      ? `<div style="margin: 8px 0; background: #fff; padding: 10px; border-radius: 8px;"><strong>Options:</strong><ol>${options.map((o, idx) => `<li style="${idx === Number(correctOption) ? 'color:#0FA34E;font-weight:bold;' : ''}">${o} ${idx === Number(correctOption) ? '(Correct)' : ''}</li>`).join('')}</ol></div>`
+      ? `
+        <div style="margin-top: 14px; background: #FFFFFF; border: 1px solid #E2E8F0; padding: 14px; border-radius: 10px;">
+          <div style="font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 8px;">MCQ Options:</div>
+          <ol style="margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.6;">
+            ${options.map((o, idx) => `<li style="${idx === Number(correctOption) ? 'color: #0FA34E; font-weight: 700;' : 'color: #334155;'}">${o} ${idx === Number(correctOption) ? '✓ (Correct Option)' : ''}</li>`).join('')}
+          </ol>
+        </div>
+      `
       : '';
 
     const formattedImage = image_url
       ? `
-        <div style="margin-top:12px;padding-top:12px;border-top:1px solid #0FA34E22">
-          <strong>Question Diagram / Image URL:</strong>
-          <div style="margin: 8px 0; text-align: center; background: #fff; padding: 12px; border-radius: 8px; border: 1px solid #0FA34E22;">
-            <img src="${image_url}" alt="Contributed Question Image" style="max-width: 100%; max-height: 350px; border-radius: 6px;" />
-            <p style="font-size: 11px; margin-top: 6px;"><a href="${image_url}" target="_blank" style="color: #0FA34E; text-decoration: underline;">View Full Resolution Image Link</a></p>
+        <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #E2E8F0;">
+          <div style="font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 8px;">Question Diagram / Screenshot:</div>
+          <div style="text-align: center; background: #FFFFFF; padding: 12px; border-radius: 10px; border: 1px solid #E2E8F0;">
+            <img src="${image_url}" alt="Question Image" style="max-width: 100%; max-height: 350px; border-radius: 8px;" />
+            <p style="font-size: 11px; margin: 8px 0 0;"><a href="${image_url}" target="_blank" style="color: #0FA34E; text-decoration: underline; font-weight: 600;">Open High-Res Image Link &rarr;</a></p>
           </div>
         </div>
       `
       : '';
 
-    await transporter.sendMail({
-      from: `"Kampus Ace Contributions" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
-      to: adminEmail,
-      subject: `📝 New Question Contribution: [${companyName || 'General'}] ${questionTitle}`,
-      html: `
-        <div style="font-family:Inter,sans-serif;max-width:640px;margin:0 auto;background:#F6E9D2;padding:32px;border-radius:20px;color:#0B7C3C">
-          <div style="background:#0FA34E;padding:18px 24px;border-radius:14px;margin-bottom:20px">
-            <h1 style="color:#D7F27A;margin:0;font-size:22px;font-weight:900">Kampus Ace</h1>
-            <p style="color:#DFF5E6;margin:4px 0 0;font-size:12px">Company Question Bank Contribution</p>
-          </div>
+    const contentHtml = `
+      <!-- Status Pill -->
+      <div style="margin-bottom: 16px;">
+        <span style="display: inline-block; background-color: #FEF3C7; color: #B45309; border: 1px solid #FCD34D; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; padding: 4px 10px; border-radius: 9999px;">
+          Question Submission Review
+        </span>
+      </div>
 
-          <h2 style="color:#0FA34E;margin-top:0">New Question Submitted for Review ✍️</h2>
-          <p style="font-size:14px">A student has submitted a new question from recent placement drive rounds:</p>
+      <h2 style="margin: 0 0 12px; color: #0F172A; font-size: 20px; font-weight: 800;">
+        New Company Bank Question Submitted ✍️
+      </h2>
+      <p style="margin: 0 0 20px; color: #475569; font-size: 14px; line-height: 1.5;">
+        A student has submitted an interview / OA question from recent campus placement rounds:
+      </p>
 
-          <div style="background:#DFF5E6;border:1.5px solid #0FA34E44;border-radius:12px;padding:18px;margin:16px 0;font-size:13px;line-height:1.6">
-            <p style="margin:4px 0"><strong>🏢 Recruiter / Company:</strong> ${companyName || 'Unspecified'}</p>
-            <p style="margin:4px 0"><strong>🎯 Placement Round:</strong> ${roundType || 'General OA / Technical'}</p>
-            <p style="margin:4px 0"><strong>📌 Title:</strong> ${questionTitle}</p>
-            <p style="margin:4px 0"><strong>🏷️ Type & Difficulty:</strong> ${questionType?.toUpperCase() || 'TEXT'} | ${difficulty || 'Medium'}</p>
-            ${tags ? `<p style="margin:4px 0"><strong>🏷️ Tags:</strong> ${tags}</p>` : ''}
-            
-            ${questionBody ? `
-            <div style="margin-top:12px;padding-top:12px;border-top:1px solid #0FA34E22">
-              <strong>Question Body / Code / Prompt:</strong>
-              <pre style="background:#fff;padding:12px;border-radius:8px;white-space:pre-wrap;font-family:monospace;font-size:12px;margin:8px 0;border:1px solid #0FA34E22">${questionBody}</pre>
-            </div>
-            ` : ''}
-
-            ${formattedOptions}
-            ${formattedImage}
-          </div>
-
-          <div style="background:#F6E9D2;border:1.5px dashed #0FA34E55;border-radius:12px;padding:14px;margin:16px 0;font-size:12px">
-            <h3 style="margin:0 0 6px;color:#0FA34E">Contributor Details:</h3>
-            <p style="margin:2px 0"><strong>Name:</strong> ${contributorName || 'Anonymous Student'}</p>
-            <p style="margin:2px 0"><strong>Email:</strong> ${contributorEmail || 'Not specified'}</p>
-            ${contributorBatch ? `<p style="margin:2px 0"><strong>Batch / Branch:</strong> ${contributorBatch}</p>` : ''}
-          </div>
-
-          <p style="font-size:12px;color:#0B7C3C88;margin-top:20px">
-            You can verify and add this question to the company bank directly from the Kampus Ace Admin Panel (/admin/company-bank).
-          </p>
+      <!-- Question Spec Card -->
+      <div style="background-color: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+        <div style="margin-bottom: 10px;">
+          <span style="display: inline-block; background-color: #0FA34E; color: #FFFFFF; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 6px; margin-right: 6px;">
+            ${companyName || 'General'}
+          </span>
+          <span style="display: inline-block; background-color: #E2E8F0; color: #334155; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 6px; margin-right: 6px;">
+            ${roundType || 'General Round'}
+          </span>
+          <span style="display: inline-block; background-color: #DBEAFE; color: #1E40AF; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 6px;">
+            ${difficulty || 'Medium'}
+          </span>
         </div>
-      `,
+
+        <div style="font-size: 16px; font-weight: 800; color: #0F172A; margin: 12px 0 8px;">
+          ${questionTitle}
+        </div>
+
+        ${questionBody ? `
+          <div style="margin-top: 12px; background: #FFFFFF; padding: 14px; border-radius: 8px; border: 1px solid #E2E8F0; font-family: monospace; font-size: 12.5px; line-height: 1.5; color: #1E293B; white-space: pre-wrap;">${questionBody}</div>
+        ` : ''}
+
+        ${formattedOptions}
+        ${formattedImage}
+      </div>
+
+      <!-- Contributor Details -->
+      <div style="background-color: #F0FDF4; border: 1px solid #DCFCE7; border-radius: 10px; padding: 14px 18px; margin-bottom: 24px; font-size: 12.5px; color: #166534;">
+        <strong>Contributor:</strong> ${contributorName || 'Student'} (${contributorEmail || 'Anonymous'}) ${contributorBatch ? `• ${contributorBatch}` : ''}
+      </div>
+
+      <div style="text-align: center;">
+        <a href="${FRONTEND_URL}/admin/company-bank" target="_blank" style="display: inline-block; background-color: #0FA34E; color: #FFFFFF; font-size: 13px; font-weight: 700; text-decoration: none; padding: 12px 24px; border-radius: 8px;">
+          Review &amp; Approve in Admin Bank &rarr;
+        </a>
+      </div>
+    `;
+
+    const transporter = getTransporter();
+    await transporter.sendMail({
+      from: getSender('Kampus Ace Review'),
+      to: adminRecipients.join(', '),
+      subject: `📝 New Question Submission: [${companyName || 'General'}] ${questionTitle}`,
+      html: renderEmailWrapper({
+        headerTitle: `Question Contribution - ${companyName}`,
+        headerSubtitle: 'Company Question Bank Review',
+        contentHtml,
+      }),
     });
-    console.log(`[Email] Question contribution email sent to admin (${adminEmail}) for ${companyName}`);
+    console.log(`[Email] Question contribution email sent to admin (${adminRecipients.join(', ')})`);
   } catch (err) {
     console.error('[Email] Failed to send question contribution email:', err.message);
   }
