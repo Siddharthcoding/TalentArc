@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, Trash2, Edit3, Users, ChevronDown, ChevronUp,
@@ -14,7 +15,6 @@ import {
 } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 
-const ADMIN_EMAILS = ['23052921@kiit.ac.in'];
 
 const EMPTY_FORM = {
   mentor: '', role: '', batch: '', topic: '',
@@ -49,7 +49,7 @@ export default function DoubtSessionAdmin() {
   const [bookingsData, setBookingsData] = useState({});
   const [loadingBookings, setLoadingBookings] = useState({});
 
-  const isAdmin = user && ADMIN_EMAILS.includes(user.email?.toLowerCase());
+  const isAdmin = Boolean(user?.isAdmin);
 
   // Redirect non-admins
   useEffect(() => {
@@ -59,6 +59,17 @@ export default function DoubtSessionAdmin() {
   }, [authLoading, isAdmin, navigate]);
 
   useEffect(() => { loadSessions(); }, []);
+
+  useEffect(() => {
+    if (showForm) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [showForm]);
 
   const loadSessions = async () => {
     setLoading(true);
@@ -213,13 +224,21 @@ export default function DoubtSessionAdmin() {
 
       {/* ── Create/Edit Form Modal ── */}
       <AnimatePresence>
-        {showForm && (
-          <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        {showForm && createPortal(
+          <div
+            className="fixed inset-0 z-[99999] flex items-center justify-center p-4 overflow-y-auto"
+            style={{
+              backgroundColor: 'rgba(0,0,0,0.65)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+            }}
+            onClick={(e) => { if (e.target === e.currentTarget) setShowForm(false); }}
+          >
             <motion.div
               initial={{ scale: 0.95, y: 15, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.95, y: 15, opacity: 0 }}
-              className="bg-[#F6E9D2] border-2 border-[#0FA34E] rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl space-y-5 relative max-h-[90vh] overflow-y-auto"
+              className="bg-[#F6E9D2] border-2 border-[#0FA34E] rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl space-y-5 relative my-auto max-h-[90vh] overflow-y-auto"
             >
               <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: '#0FA34E33' }}>
                 <div className="flex items-center gap-2">
@@ -305,7 +324,8 @@ export default function DoubtSessionAdmin() {
                 </button>
               </form>
             </motion.div>
-          </div>
+          </div>,
+          document.body
         )}
       </AnimatePresence>
 

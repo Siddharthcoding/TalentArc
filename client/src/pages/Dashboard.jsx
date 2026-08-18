@@ -10,12 +10,17 @@ import DashboardGrid from '@/components/dashboard/DashboardGrid';
 import AuthWall from '@/components/auth/AuthWall';
 import SEO from '@/components/SEO';
 import SectionWrapper from '@/components/ui/SectionWrapper';
+import PaymentModal from '@/components/payment/PaymentModal';
+import FreeTrialBadge from '@/components/payment/FreeTrialBadge';
+import { useAccess } from '@/hooks/useAccess';
 
 function DashboardContent() {
-  const { status, file, result, error, progressStep, stepLabels, selectFile, retry, reset } = useResume();
-  const { isAuthenticated, loading } = useAuth();
+  const { status, file, result, error, paywallError, progressStep, stepLabels, selectFile, retry, reset, clearPaywall } = useResume();
+  const { isAuthenticated, loading, user } = useAuth();
+  const { hasPro, trialUsed, loading: accessLoading, refresh: refreshAccess } = useAccess();
   const [showAuthWall, setShowAuthWall] = useState(false);
   const [cachedResult, setCachedResult] = useState(null);
+  const [showPaywall, setShowPaywall] = useState(false);
 
   useEffect(() => {
     try {
@@ -43,6 +48,11 @@ function DashboardContent() {
     }
   }, [status, result, isAuthenticated, loading]);
 
+  // Surface paywall modal when context emits PAYWALL action
+  useEffect(() => {
+    if (paywallError) setShowPaywall(true);
+  }, [paywallError]);
+
   const handleAuthSuccess = useCallback(() => {
     setShowAuthWall(false);
   }, []);
@@ -52,6 +62,19 @@ function DashboardContent() {
     reset();
   }, [reset]);
 
+  const handlePaywallClose = useCallback(() => {
+    setShowPaywall(false);
+    clearPaywall?.();
+  }, [clearPaywall]);
+
+  const handlePaywallSuccess = useCallback(() => {
+    setShowPaywall(false);
+    clearPaywall?.();
+    refreshAccess();
+    // Re-trigger analysis if file is available
+    if (file) selectFile(file);
+  }, [clearPaywall, refreshAccess, file, selectFile]);
+
   const effectiveStatus = cachedResult ? 'complete' : status;
   const effectiveResult = cachedResult || result;
 
@@ -60,8 +83,27 @@ function DashboardContent() {
       <div className="w-full max-w-6xl mx-auto">
         <AnimatePresence mode="wait">
           {effectiveStatus === 'idle' && !cachedResult && (
-            <div key="dropzone" className="max-w-lg mx-auto">
+            <div key="dropzone" className="max-w-lg mx-auto space-y-3">
+              <div className="flex justify-center">
+                <FreeTrialBadge
+                  service="ats"
+                  trialUsed={trialUsed('ats')}
+                  hasPro={hasPro}
+                  loading={accessLoading}
+                />
+              </div>
               <Dropzone onFileSelect={selectFile} />
+              {trialUsed('ats') && !hasPro && (
+                <div className="text-center mt-2">
+                  <button
+                    onClick={() => setShowPaywall(true)}
+                    className="text-xs font-bold underline underline-offset-2"
+                    style={{ color: '#0FA34E' }}
+                  >
+                    Upgrade to Pro for unlimited scans →
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -90,6 +132,14 @@ function DashboardContent() {
       {showAuthWall && (
         <AuthWall reportType="ats" onAuthSuccess={handleAuthSuccess} />
       )}
+
+      <PaymentModal
+        isOpen={showPaywall || !!paywallError}
+        onClose={handlePaywallClose}
+        mode="subscription"
+        user={user}
+        onSuccess={handlePaywallSuccess}
+      />
     </SectionWrapper>
   );
 }

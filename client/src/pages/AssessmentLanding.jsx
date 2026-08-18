@@ -20,6 +20,9 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { createAssessment, parseResumeForAssessment, getReports } from '@/services/api';
 import SEO from '@/components/SEO';
+import PaymentModal from '@/components/payment/PaymentModal';
+import FreeTrialBadge from '@/components/payment/FreeTrialBadge';
+import { useAccess } from '@/hooks/useAccess';
 
 const MODES = [
   { key: 'skill', label: 'Specific Skill(s)', icon: Code, description: 'Test on React, Java, SQL, DSA (comma-separated).' },
@@ -29,7 +32,7 @@ const MODES = [
 ];
 
 export default function AssessmentLanding() {
-  const { isAuthenticated, login } = useAuth();
+  const { user, isAuthenticated, login } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
@@ -54,6 +57,9 @@ export default function AssessmentLanding() {
   const [timeLimitMinutes, setTimeLimitMinutes] = useState(10);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showPaywall, setShowPaywall] = useState(false);
+
+  const { hasPro, trialUsed, loading: accessLoading, refresh: refreshAccess } = useAccess();
 
   // Load saved resume reports if user is signed in
   useEffect(() => {
@@ -183,15 +189,20 @@ export default function AssessmentLanding() {
         throw new Error(res.error || 'Failed to start assessment');
       }
     } catch (err) {
-      setError(err?.message || 'Failed to generate assessment session.');
+      if (err?.code === 402) {
+        setShowPaywall(true);
+      } else {
+        setError(err?.message || 'Failed to generate assessment session.');
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="section-container py-24 space-y-8 text-left max-w-5xl mx-auto">
-      <SEO
+    <>
+      <div className="section-container py-24 space-y-8 text-left max-w-5xl mx-auto">
+        <SEO
         title="AI Mock Placement Tests"
         description="Take AI-powered mock placement tests tailored to your target company. Practice DSA, Aptitude, SQL, System Design, and behavioral rounds — customized for KIIT campus recruiters."
         path="/assessment"
@@ -201,9 +212,19 @@ export default function AssessmentLanding() {
         <div className="inline-block bg-[#0FA34E] text-[#C6FF3D] font-mono text-xs font-black px-3.5 py-1 rounded-full uppercase mb-2 shadow">
           ★ PROCTORED AI MOCK ASSESSMENT
         </div>
-        <h1 className="font-display text-4xl sm:text-6xl font-extrabold text-[#0FA34E]">
-          KIIT AI Mock Assessment Portal
-        </h1>
+        <div className="flex items-center gap-3 flex-wrap mt-1 mb-2">
+          <h1 className="font-display text-4xl sm:text-6xl font-extrabold text-[#0FA34E]">
+            KIIT AI Mock Assessment Portal
+          </h1>
+        </div>
+        <div className="flex items-center gap-3 mt-2 mb-1">
+          <FreeTrialBadge
+            service="mock_test"
+            trialUsed={trialUsed('mock_test')}
+            hasPro={hasPro}
+            loading={accessLoading}
+          />
+        </div>
         <p className="text-sm font-medium text-[#0B7C3C] mt-2">
           Timed, proctored assessments generated dynamically across DSA, System Design, SQL, and CS Core topics.
         </p>
@@ -486,5 +507,14 @@ export default function AssessmentLanding() {
 
       </div>
     </div>
+
+      <PaymentModal
+        isOpen={showPaywall}
+        onClose={() => setShowPaywall(false)}
+        mode="subscription"
+        user={user}
+        onSuccess={() => { setShowPaywall(false); refreshAccess(); }}
+      />
+    </>
   );
 }

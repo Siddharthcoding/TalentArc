@@ -613,4 +613,203 @@ export async function sendContactSupportEmail({ name, email, subject, category, 
   }
 }
 
+/**
+ * Send Pro Subscription Payment Confirmation Email to User
+ */
+export async function sendSubscriptionConfirmationEmail({
+  email,
+  name,
+  planName = 'Pro Monthly Pass',
+  amount = 49,
+  orderId,
+  paymentId,
+  startDate,
+  endDate,
+}) {
+  if (!email) return;
+
+  const formattedEnd = endDate ? new Date(endDate).toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  }) : '30 days from purchase';
+
+  const contentHtml = `
+    <div style="margin-bottom: 20px; text-align: center;">
+      <span style="display: inline-block; background-color: #DFF5E6; color: #0FA34E; border: 1.5px solid #0FA34E; font-size: 12px; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; padding: 6px 16px; border-radius: 9999px;">
+        👑 Pro Membership Activated
+      </span>
+    </div>
+
+    <h2 style="margin: 0 0 10px; color: #0F172A; font-size: 22px; font-weight: 800; text-align: center;">
+      Welcome to Kampus Ace Pro, ${name ? name.split(' ')[0] : 'Student'}! 🎉
+    </h2>
+    <p style="margin: 0 0 24px; color: #475569; font-size: 14px; line-height: 1.6; text-align: center;">
+      Your payment of <strong>₹${amount}</strong> was successful. You now have unlimited access to every placement tool for the next 30 days.
+    </p>
+
+    <!-- Subscription Summary Card -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 14px; overflow: hidden; margin-bottom: 24px;">
+      <tr>
+        <td style="padding: 14px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; color: #64748B; font-weight: 600; width: 140px;">Plan:</td>
+        <td style="padding: 14px 18px; border-bottom: 1px solid #E2E8F0; font-size: 14px; color: #0FA34E; font-weight: 800;">${planName}</td>
+      </tr>
+      <tr>
+        <td style="padding: 14px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; color: #64748B; font-weight: 600;">Amount Paid:</td>
+        <td style="padding: 14px 18px; border-bottom: 1px solid #E2E8F0; font-size: 14px; color: #0F172A; font-weight: 700;">₹${amount}.00 (UPI / Razorpay)</td>
+      </tr>
+      <tr>
+        <td style="padding: 14px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; color: #64748B; font-weight: 600;">Valid Until:</td>
+        <td style="padding: 14px 18px; border-bottom: 1px solid #E2E8F0; font-size: 14px; color: #0B7C3C; font-weight: 700;">${formattedEnd}</td>
+      </tr>
+      <tr>
+        <td style="padding: 14px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; color: #64748B; font-weight: 600;">Payment ID:</td>
+        <td style="padding: 14px 18px; border-bottom: 1px solid #E2E8F0; font-size: 12px; font-family: monospace; color: #64748B;">${paymentId || 'N/A'}</td>
+      </tr>
+      <tr>
+        <td style="padding: 14px 18px; font-size: 13px; color: #64748B; font-weight: 600;">Order ID:</td>
+        <td style="padding: 14px 18px; font-size: 12px; font-family: monospace; color: #64748B;">${orderId || 'N/A'}</td>
+      </tr>
+    </table>
+
+    <!-- Unlocked Features List -->
+    <div style="background-color: #FFFFFF; border: 1.5px solid #DDF6E8; border-radius: 14px; padding: 20px; margin-bottom: 24px;">
+      <div style="font-size: 12px; font-weight: 800; color: #0FA34E; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 12px;">Unlocked Benefits:</div>
+      <ul style="margin: 0; padding-left: 20px; color: #1E293B; font-size: 13.5px; line-height: 1.8;">
+        <li><strong>Unlimited ATS Resume Scans</strong> — optimize your resume for dream company shortlists.</li>
+        <li><strong>Unlimited JD Matching</strong> — find exact skill gaps against any job description.</li>
+        <li><strong>Full Company Question Bank Access</strong> — 40+ top recruiter question sets (Microsoft, Amazon, HighRadius, Deloitte).</li>
+        <li><strong>Unlimited AI Mock Assessments</strong> — practice timed technical and aptitude tests.</li>
+        <li><strong>ATS Resume Builder</strong> — unlimited single-page PDF exports.</li>
+      </ul>
+    </div>
+
+    <!-- CTA Button -->
+    <div style="text-align: center; margin-top: 28px;">
+      <a href="${FRONTEND_URL}/dashboard" style="display: inline-block; background: linear-gradient(135deg, #0A6C35 0%, #0FA34E 100%); color: #FFFFFF; font-size: 14px; font-weight: 800; text-decoration: none; padding: 14px 32px; border-radius: 9999px; box-shadow: 0 4px 12px rgba(15, 163, 78, 0.3);">
+        Start Practicing on Kampus Ace &rarr;
+      </a>
+    </div>
+  `;
+
+  try {
+    const transporter = getTransporter();
+    await transporter.sendMail({
+      from: getSender('Kampus Ace Pro'),
+      to: email,
+      replyTo: 'kampusace@gmail.com',
+      subject: `👑 Pro Activated! Payment Confirmation & Receipt — Kampus Ace (₹${amount})`,
+      text: `Welcome to Kampus Ace Pro!\n\nYour payment of ₹${amount}.00 for the Pro Monthly Pass was successful.\nValid Until: ${formattedEnd}\nPayment ID: ${paymentId || 'N/A'}\nOrder ID: ${orderId || 'N/A'}\n\nEnjoy unlimited ATS resume scans, JD matching, company question banks, and AI mock tests.\n\nAccess your dashboard: ${FRONTEND_URL}/dashboard`,
+      html: renderEmailWrapper({
+        headerTitle: 'Kampus Ace Pro Subscription Confirmation',
+        headerSubtitle: 'Pro Membership Receipt & Access Details',
+        contentHtml,
+      }),
+    });
+    console.log(`[Email] Pro subscription confirmation email sent to ${email}`);
+  } catch (err) {
+    console.error('[Email] Failed to send subscription confirmation email:', err.message);
+  }
+}
+
+/**
+ * Send Doubt Session Booking Payment Confirmation Email to User
+ */
+export async function sendDoubtBookingPaymentConfirmationEmail({
+  email,
+  name,
+  mentor,
+  role,
+  topic,
+  sessionDate,
+  duration = '60 Mins',
+  meetLink,
+  amount = 20,
+  orderId,
+  paymentId,
+}) {
+  if (!email) return;
+
+  const contentHtml = `
+    <div style="margin-bottom: 20px; text-align: center;">
+      <span style="display: inline-block; background-color: #DFF5E6; color: #0FA34E; border: 1.5px solid #0FA34E; font-size: 12px; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; padding: 6px 16px; border-radius: 9999px;">
+        🎓 Slot Confirmed &amp; Paid
+      </span>
+    </div>
+
+    <h2 style="margin: 0 0 10px; color: #0F172A; font-size: 22px; font-weight: 800; text-align: center;">
+      Your Doubt Session is Booked, ${name ? name.split(' ')[0] : 'Student'}! 🚀
+    </h2>
+    <p style="margin: 0 0 24px; color: #475569; font-size: 14px; line-height: 1.6; text-align: center;">
+      Your seat for the live mentor session has been confirmed. Details and Google Meet link are below:
+    </p>
+
+    <!-- Session Details Card -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 14px; overflow: hidden; margin-bottom: 24px;">
+      <tr>
+        <td style="padding: 14px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; color: #64748B; font-weight: 600; width: 130px;">Mentor:</td>
+        <td style="padding: 14px 18px; border-bottom: 1px solid #E2E8F0; font-size: 14px; color: #0F172A; font-weight: 800;">${mentor || 'Placed Alum'} <span style="font-size: 12px; color: #0FA34E; font-weight: 600;">(${role || ''})</span></td>
+      </tr>
+      <tr>
+        <td style="padding: 14px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; color: #64748B; font-weight: 600;">Topic:</td>
+        <td style="padding: 14px 18px; border-bottom: 1px solid #E2E8F0; font-size: 14px; color: #0F172A; font-weight: 700;">${topic || 'Live Doubt Resolution'}</td>
+      </tr>
+      <tr>
+        <td style="padding: 14px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; color: #64748B; font-weight: 600;">Session Date:</td>
+        <td style="padding: 14px 18px; border-bottom: 1px solid #E2E8F0; font-size: 14px; color: #0B7C3C; font-weight: 800;">${sessionDate || 'Scheduled Time'}</td>
+      </tr>
+      <tr>
+        <td style="padding: 14px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; color: #64748B; font-weight: 600;">Duration:</td>
+        <td style="padding: 14px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; color: #1E293B; font-weight: 600;">${duration}</td>
+      </tr>
+      <tr>
+        <td style="padding: 14px 18px; border-bottom: 1px solid #E2E8F0; font-size: 13px; color: #64748B; font-weight: 600;">Amount Paid:</td>
+        <td style="padding: 14px 18px; border-bottom: 1px solid #E2E8F0; font-size: 14px; color: #0F172A; font-weight: 700;">₹${amount}.00 (Paid via UPI)</td>
+      </tr>
+      <tr>
+        <td style="padding: 14px 18px; font-size: 13px; color: #64748B; font-weight: 600;">Payment Ref:</td>
+        <td style="padding: 14px 18px; font-size: 12px; font-family: monospace; color: #64748B;">${paymentId || 'N/A'}</td>
+      </tr>
+    </table>
+
+    <!-- Meet Link Card -->
+    ${meetLink ? `
+      <div style="background-color: #EBF8FF; border: 2px solid #3182CE; border-radius: 14px; padding: 20px; text-align: center; margin-bottom: 24px;">
+        <div style="font-size: 13px; font-weight: 700; color: #2B6CB0; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">🔗 Google Meet Joining Link:</div>
+        <a href="${meetLink}" target="_blank" style="display: inline-block; background-color: #3182CE; color: #FFFFFF; font-size: 15px; font-weight: 800; text-decoration: none; padding: 12px 28px; border-radius: 8px; margin-top: 6px;">
+          Join Google Meet Call &rarr;
+        </a>
+        <p style="margin: 8px 0 0; font-size: 11.5px; color: #4A5568;">Link: <a href="${meetLink}" style="color: #3182CE;">${meetLink}</a></p>
+      </div>
+    ` : `
+      <p style="font-size: 13px; color: #475569; text-align: center; margin-bottom: 20px;">
+        The Google Meet link will be accessible directly on your Doubt Sessions page 15 minutes before the call.
+      </p>
+    `}
+
+    <p style="font-size: 12px; color: #64748B; text-align: center; line-height: 1.5; margin: 0;">
+      Please join 5 minutes before the session starts with your questions or code queries ready.
+    </p>
+  `;
+
+  try {
+    const transporter = getTransporter();
+    await transporter.sendMail({
+      from: getSender('Kampus Ace Doubt Sessions'),
+      to: email,
+      replyTo: 'kampusace@gmail.com',
+      subject: `🎓 Slot Booked! Live Mentor Doubt Session with ${mentor || 'Placed Senior'} (₹${amount})`,
+      text: `Your doubt session is booked!\n\nMentor: ${mentor || 'Placed Senior'} (${role || ''})\nTopic: ${topic || 'Live Doubt Resolution'}\nDate & Time: ${sessionDate || 'Scheduled Time'}\nDuration: ${duration}\nAmount Paid: ₹${amount}.00\nPayment Ref: ${paymentId || 'N/A'}\n${meetLink ? `Google Meet Link: ${meetLink}` : ''}\n\nPlease join 5 minutes prior to start.`,
+      html: renderEmailWrapper({
+        headerTitle: 'Doubt Session Booking Confirmation',
+        headerSubtitle: 'Live 1-on-1 Placement Mentorship',
+        contentHtml,
+      }),
+    });
+    console.log(`[Email] Doubt session booking confirmation email sent to ${email}`);
+  } catch (err) {
+    console.error('[Email] Failed to send doubt session booking confirmation email:', err.message);
+  }
+}
+
 

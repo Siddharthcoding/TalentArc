@@ -1,7 +1,8 @@
 import { Router } from "express";
 import multer from "multer";
 import { matchJD } from "../controllers/jdMatch.controller.js";
-import optionalAuth from "../middleware/optionalAuth.js";
+import isAuthenticated from "../middleware/isAuthenticated.js";
+import requiresAccess from "../middleware/requiresAccess.js";
 
 const upload = multer({
     dest: "uploads/",
@@ -16,7 +17,8 @@ router.post(
         { name: "resume", maxCount: 1 },
         { name: "jdFile", maxCount: 1 },
     ]),
-    optionalAuth,
+    isAuthenticated,
+    requiresAccess("jd_match"),
     matchJD
 );
 

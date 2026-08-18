@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users,
@@ -27,15 +28,17 @@ import {
 import { Link } from 'react-router-dom';
 import {
   getDoubtSessions as fetchDoubtSessionsApi,
-  bookDoubtSession as bookDoubtSessionApi,
   getDoubtPolls,
   createDoubtPoll,
   voteDoubtPoll,
   addDoubtPollOption,
-  deleteDoubtPoll
+  deleteDoubtPoll,
+  createDoubtOrder,
+  verifyDoubtPayment
 } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 import SEO from '@/components/SEO';
+import PaymentModal from '@/components/payment/PaymentModal';
 
 const FALLBACK_SESSIONS = [
   { id: 'doubt-1', mentor: 'SDE at Microsoft', role: 'SDE at Microsoft (₹51.0 LPA)', batch: "KIIT CSE '24 Alum", topic: 'Cracking HighRadius & Microsoft Coding & Technical Rounds', date: 'Today, 7:00 PM IST', duration: '60 Mins', totalSeats: 15, bookedSeats: 12, tags: ['DSA', 'Interview Tips', 'System Design'], avatar: 'MS', meetLink: 'https://meet.google.com/kampus-ace-doubt-1' },
@@ -46,7 +49,6 @@ const FALLBACK_SESSIONS = [
   { id: 'doubt-6', mentor: 'SDE at Amazon', role: 'SDE at Amazon (₹45.0 LPA)', batch: "KIIT CSE '23 Alum", topic: 'Amazon Leadership Principles & DP Optimization Tricks', date: 'Tue, 19 Aug - 7:30 PM', duration: '90 Mins', totalSeats: 15, bookedSeats: 14, tags: ['Amazon', 'DP', 'Behavioral'], avatar: 'AZ', meetLink: 'https://meet.google.com/kampus-ace-doubt-6' },
 ];
 
-const ADMIN_EMAILS = ['23052921@kiit.ac.in'];
 
 export default function DoubtSessions() {
   const { user } = useAuth();
@@ -54,6 +56,9 @@ export default function DoubtSessions() {
   const [loadingSessions, setLoadingSessions] = useState(true);
   const [bookingId, setBookingId] = useState(null);
   const [toast, setToast] = useState(null);
+
+  // Payment modal state
+  const [paymentSession, setPaymentSession] = useState(null); // session being paid for
 
   // Polls State
   const [polls, setPolls] = useState([]);
@@ -71,7 +76,7 @@ export default function DoubtSessions() {
   const [newPollOptionsText, setNewPollOptionsText] = useState('HighRadius - SQL & Java OA Query Drill\nMicrosoft - DSA Hard & Low-Level Design\nDeloitte USI - AMCAT Aptitude & Case Study\nAmazon - DP & Leadership Principles');
   const [creatingPoll, setCreatingPoll] = useState(false);
 
-  const isAdmin = user && (ADMIN_EMAILS.includes(user.email?.toLowerCase()) || user.role === 'admin');
+  const isAdmin = Boolean(user?.isAdmin || user?.role === 'admin');
 
 
   // Fetch live doubt sessions
@@ -105,6 +110,17 @@ export default function DoubtSessions() {
     loadPolls();
   }, [user]);
 
+  useEffect(() => {
+    if (isCreatePollOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isCreatePollOpen]);
+
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3500);
@@ -115,42 +131,33 @@ export default function DoubtSessions() {
       showToast('Please sign in to book a session', 'error');
       return;
     }
-    setBookingId(sessionId);
-    try {
-      const res = await bookDoubtSessionApi(sessionId);
-      if (res.success) {
-        setSessions((prev) =>
-          prev.map((s) =>
-            s.id === sessionId
-              ? {
-                  ...s,
-                  isBooked: res.booked,
-                  meetLink: res.booked ? (res.meetLink || s.meetLink) : null,
-                  bookedSeats: res.booked ? s.bookedSeats + 1 : Math.max(0, s.bookedSeats - 1),
-                  remainingSeats: res.remainingSeats,
-                }
-              : s
-          )
-        );
-        showToast(
-          res.booked
-            ? '🎉 Slot booked! Check your email for the meet link.'
-            : 'Booking cancelled. Your seat has been released.'
-        );
-      }
-    } catch {
-      // Local fallback toggle
-      setSessions((prev) =>
-        prev.map((s) =>
-          s.id === sessionId
-            ? { ...s, isBooked: !s.isBooked, bookedSeats: s.isBooked ? s.bookedSeats - 1 : s.bookedSeats + 1 }
-            : s
-        )
-      );
-      showToast('Booking updated');
-    } finally {
-      setBookingId(null);
-    }
+    // Find the session and open payment modal
+    const session = sessions.find((s) => s.id === sessionId);
+    if (session) setPaymentSession(session);
+  };
+
+  // Called by PaymentModal to create a Razorpay order for this session
+  const handleDoubtOrder = async () => {
+    const data = await createDoubtOrder(paymentSession.id);
+    return data;
+  };
+
+  // Called by PaymentModal after Razorpay checkout success
+  const handleDoubtVerify = async (razorpayPayload) => {
+    await verifyDoubtPayment({ ...razorpayPayload, sessionId: paymentSession.id });
+  };
+
+  // Called after successful payment + booking
+  const handleDoubtSuccess = () => {
+    setSessions((prev) =>
+      prev.map((s) =>
+        s.id === paymentSession.id
+          ? { ...s, isBooked: true, bookedSeats: s.bookedSeats + 1 }
+          : s
+      )
+    );
+    showToast('🎉 Slot booked! Check your email for the meet link.');
+    setPaymentSession(null);
   };
 
   const handleVote = async (pollId, optionId) => {
@@ -719,13 +726,21 @@ export default function DoubtSessions() {
       {/* ── MODAL: CREATE CUSTOM POLL ─────────────────────────────────────────── */}
       {/* ══════════════════════════════════════════════════════════════════════════ */}
       <AnimatePresence>
-        {isCreatePollOpen && (
-          <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        {isCreatePollOpen && createPortal(
+          <div
+            className="fixed inset-0 z-[99999] flex items-center justify-center p-4 overflow-y-auto"
+            style={{
+              backgroundColor: 'rgba(0,0,0,0.65)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+            }}
+            onClick={(e) => { if (e.target === e.currentTarget) setIsCreatePollOpen(false); }}
+          >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="bg-[#F6E9D2] border-2 border-[#0FA34E] rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-5 relative max-h-[90vh] overflow-y-auto"
+              className="bg-[#F6E9D2] border-2 border-[#0FA34E] rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-5 relative my-auto max-h-[90vh] overflow-y-auto"
             >
               <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: '#0FA34E33' }}>
                 <div className="flex items-center gap-2">
@@ -812,9 +827,26 @@ export default function DoubtSessions() {
                 </div>
               </form>
             </motion.div>
-          </div>
+          </div>,
+          document.body
         )}
       </AnimatePresence>
+
+      {/* Doubt Session Payment Modal */}
+      <PaymentModal
+        isOpen={!!paymentSession}
+        onClose={() => setPaymentSession(null)}
+        mode="doubt"
+        user={user}
+        sessionInfo={paymentSession ? {
+          mentor: paymentSession.mentor,
+          topic: paymentSession.topic,
+          sessionDate: paymentSession.session_date || paymentSession.date,
+        } : null}
+        onDoubtOrder={handleDoubtOrder}
+        onDoubtVerify={handleDoubtVerify}
+        onSuccess={handleDoubtSuccess}
+      />
 
     </div>
   );

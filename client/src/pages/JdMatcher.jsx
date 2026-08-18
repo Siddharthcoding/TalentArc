@@ -8,12 +8,17 @@ import MatchDashboard from '@/components/jdmatcher/MatchDashboard';
 import AuthWall from '@/components/auth/AuthWall';
 import ErrorModal from '@/components/ui/ErrorModal';
 import SEO from '@/components/SEO';
+import PaymentModal from '@/components/payment/PaymentModal';
+import FreeTrialBadge from '@/components/payment/FreeTrialBadge';
+import { useAccess } from '@/hooks/useAccess';
 
 function JdMatcherContent() {
-  const { status, progressStep, result, error, startMatch, retry, reset } = useJdMatcher();
-  const { isAuthenticated, loading } = useAuth();
+  const { status, progressStep, result, error, paywallError, startMatch, retry, reset, clearPaywall } = useJdMatcher();
+  const { isAuthenticated, loading, user } = useAuth();
+  const { hasPro, trialUsed, loading: accessLoading, refresh: refreshAccess } = useAccess();
   const [showAuthWall, setShowAuthWall] = useState(false);
   const [cachedResult, setCachedResult] = useState(null);
+  const [showPaywall, setShowPaywall] = useState(false);
 
   useEffect(() => {
     try {
@@ -41,6 +46,11 @@ function JdMatcherContent() {
     }
   }, [status, result, isAuthenticated, loading]);
 
+  // Open paywall modal on 402 error from context
+  useEffect(() => {
+    if (paywallError) setShowPaywall(true);
+  }, [paywallError]);
+
   const handleAuthSuccess = useCallback(() => {
     setShowAuthWall(false);
   }, []);
@@ -49,6 +59,17 @@ function JdMatcherContent() {
     setCachedResult(null);
     reset();
   }, [reset]);
+
+  const handlePaywallClose = useCallback(() => {
+    setShowPaywall(false);
+    clearPaywall?.();
+  }, [clearPaywall]);
+
+  const handlePaywallSuccess = useCallback(() => {
+    setShowPaywall(false);
+    clearPaywall?.();
+    refreshAccess();
+  }, [clearPaywall, refreshAccess]);
 
   const handleCompare = useCallback(({ resumeFile, jdText, jdFile }) => {
     startMatch(resumeFile, jdText, jdFile);
@@ -73,7 +94,26 @@ function JdMatcherContent() {
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.3 }}
             >
+              <div className="flex justify-center mb-4">
+                <FreeTrialBadge
+                  service="jd_match"
+                  trialUsed={trialUsed('jd_match')}
+                  hasPro={hasPro}
+                  loading={accessLoading}
+                />
+              </div>
               <DualInputPane onCompare={handleCompare} />
+              {trialUsed('jd_match') && !hasPro && (
+                <div className="text-center mt-3">
+                  <button
+                    onClick={() => setShowPaywall(true)}
+                    className="text-xs font-bold underline underline-offset-2"
+                    style={{ color: '#0FA34E' }}
+                  >
+                    Upgrade to Pro for unlimited matching →
+                  </button>
+                </div>
+              )}
             </motion.div>
           )}
 
@@ -119,6 +159,14 @@ function JdMatcherContent() {
       {showAuthWall && (
         <AuthWall reportType="jd_match" onAuthSuccess={handleAuthSuccess} />
       )}
+
+      <PaymentModal
+        isOpen={showPaywall || !!paywallError}
+        onClose={handlePaywallClose}
+        mode="subscription"
+        user={user}
+        onSuccess={handlePaywallSuccess}
+      />
     </section>
   );
 }

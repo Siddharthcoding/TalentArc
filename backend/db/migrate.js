@@ -3,6 +3,72 @@ import pool from "./pool.js";
 
 const ENABLE_UUID_EXTENSION = `CREATE EXTENSION IF NOT EXISTS pgcrypto;`;
 
+// ─── Payment tables ───────────────────────────────────────────────────────────
+const CREATE_SUBSCRIPTIONS_TABLE = `
+  CREATE TABLE IF NOT EXISTS subscriptions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    plan TEXT NOT NULL DEFAULT 'pro_monthly',
+    status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'expired', 'cancelled')),
+    start_date TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    end_date TIMESTAMPTZ NOT NULL,
+    razorpay_order_id TEXT,
+    razorpay_payment_id TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+  );
+  CREATE INDEX IF NOT EXISTS subscriptions_user_id_idx ON subscriptions (user_id);
+  CREATE INDEX IF NOT EXISTS subscriptions_status_end_idx ON subscriptions (status, end_date);
+`;
+
+const CREATE_FREE_TRIAL_USAGE_TABLE = `
+  CREATE TABLE IF NOT EXISTS free_trial_usage (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    service TEXT NOT NULL CHECK (service IN ('ats', 'jd_match', 'mock_test')),
+    used_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(user_id, service)
+  );
+`;
+
+const CREATE_PAYMENTS_TABLE = `
+  CREATE TABLE IF NOT EXISTS payments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    type TEXT NOT NULL CHECK (type IN ('subscription', 'doubt_session')),
+    reference_id UUID,
+    amount NUMERIC(10, 2) NOT NULL,
+    razorpay_order_id TEXT,
+    razorpay_payment_id TEXT,
+    status TEXT NOT NULL DEFAULT 'captured',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+  );
+  CREATE INDEX IF NOT EXISTS payments_user_id_idx ON payments (user_id);
+`;
+
+// Add payment columns to doubt_bookings if they don't exist yet
+const ALTER_DOUBT_BOOKINGS_PAYMENT = `
+  DO $$ BEGIN
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_name='doubt_bookings' AND column_name='payment_status'
+    ) THEN
+      ALTER TABLE doubt_bookings ADD COLUMN payment_status TEXT NOT NULL DEFAULT 'paid';
+    END IF;
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_name='doubt_bookings' AND column_name='razorpay_order_id'
+    ) THEN
+      ALTER TABLE doubt_bookings ADD COLUMN razorpay_order_id TEXT;
+    END IF;
+    IF NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+      WHERE table_name='doubt_bookings' AND column_name='razorpay_payment_id'
+    ) THEN
+      ALTER TABLE doubt_bookings ADD COLUMN razorpay_payment_id TEXT;
+    END IF;
+  END $$;
+`;
+
 const CREATE_USERS_TABLE = `
   CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -209,6 +275,13 @@ export default async function migrate() {
     await client.query(CREATE_COMPANY_QUESTIONS_TABLE);
     await client.query(CREATE_COMPANY_INDEXES);
     console.log("Database tables checked/created");
+
+    // Payment tables
+    await client.query(CREATE_SUBSCRIPTIONS_TABLE);
+    await client.query(CREATE_FREE_TRIAL_USAGE_TABLE);
+    await client.query(CREATE_PAYMENTS_TABLE);
+    await client.query(ALTER_DOUBT_BOOKINGS_PAYMENT);
+    console.log("Payment tables checked/created");
 
     const countRes = await client.query("SELECT COUNT(*) FROM questions_store");
     const count = parseInt(countRes.rows[0].count, 10);

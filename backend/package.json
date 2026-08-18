@@ -12,7 +12,9 @@
     "test-phase4-llm": "node scripts/test-phase4-llm.js",
     "test-jd": "node scripts/test-jd-match.js",
     "test-e2e": "node scripts/test-e2e.js",
+    "test-payments": "node scripts/test-payments.js",
     "migrate": "node db/migrate.js",
+    "dev": "node --watch app.js",
     "start": "node app.js"
   },
   "keywords": [],
@@ -33,6 +35,7 @@
     "passport-google-oauth20": "^2.0.0",
     "pdf-parse": "^2.4.5",
     "pg": "^8.22.0",
+    "razorpay": "^2.9.8",
     "uuid": "^14.0.1"
   }
 }

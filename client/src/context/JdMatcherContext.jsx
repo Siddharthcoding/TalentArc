@@ -8,6 +8,7 @@ const initialState = {
   jdFile: null,
   result: null,
   error: null,
+  paywallError: null,
   progressStep: 0,
 };
 
@@ -22,13 +23,16 @@ function reducer(state, action) {
         jdFile: action.payload.jdFile || null,
         progressStep: 0,
         error: null,
+        paywallError: null,
       };
     case 'SET_STEP':
       return { ...state, progressStep: action.payload };
     case 'COMPLETE':
-      return { ...state, status: 'complete', result: action.payload, error: null };
+      return { ...state, status: 'complete', result: action.payload, error: null, paywallError: null };
     case 'ERROR':
-      return { ...state, status: 'error', error: action.payload };
+      return { ...state, status: 'error', error: action.payload, paywallError: null };
+    case 'PAYWALL':
+      return { ...state, status: 'idle', error: null, paywallError: action.payload };
     case 'RESET':
       return { ...initialState };
     default:
@@ -92,7 +96,11 @@ export function JdMatcherProvider({ children }) {
       })
       .catch((err) => {
         clearTimers();
-        dispatch({ type: 'ERROR', payload: err });
+        if (err?.code === 402) {
+          dispatch({ type: 'PAYWALL', payload: err });
+        } else {
+          dispatch({ type: 'ERROR', payload: err });
+        }
       });
   }, [advanceStep, clearTimers]);
 
@@ -107,7 +115,7 @@ export function JdMatcherProvider({ children }) {
     dispatch({ type: 'RESET' });
   }, [clearTimers]);
 
-  const value = { ...state, startMatch, retry, reset };
+  const value = { ...state, startMatch, retry, reset, clearPaywall: () => dispatch({ type: 'RESET' }) };
 
   return (
     <JdMatcherContext.Provider value={value}>

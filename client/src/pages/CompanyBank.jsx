@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -18,6 +19,9 @@ import {
 import { getCompanies, contributeCompanyQuestion } from "@/services/api";
 import { useAuth } from "@/context/AuthContext";
 import SEO from "@/components/SEO";
+import PaymentModal from "@/components/payment/PaymentModal";
+import { ProPaywall } from "@/components/payment/FreeTrialBadge";
+import { useAccess } from "@/hooks/useAccess";
 
 const inputStyle = {
   width: "100%",
@@ -44,9 +48,12 @@ const labelStyle = {
 
 export default function CompanyBank() {
   const { user, isAuthenticated, login } = useAuth();
+  const { hasPro, loading: accessLoading, refresh: refreshAccess } = useAccess();
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [paywallBlocked, setPaywallBlocked] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [search, setSearch] = useState("");
 
   // Contribution Modal State
@@ -78,14 +85,32 @@ export default function CompanyBank() {
   }, [user]);
 
   useEffect(() => {
+    if (isModalOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isModalOpen]);
+
+  useEffect(() => {
     getCompanies()
       .then((res) => {
         if (res.success) setCompanies(res.data);
         else setError(res.error || "Failed to load companies");
       })
-      .catch((err) => setError(err?.message || err?.error || "Network error"))
+      .catch((err) => {
+        if (err?.code === 402) {
+          setPaywallBlocked(true);
+          setLoading(false);
+          return;
+        }
+        setError(err?.message || err?.error || "Network error");
+      })
       .finally(() => setLoading(false));
-  }, []);
+  }, [hasPro]);
 
   const filtered = useMemo(() => {
     const query = search.toLowerCase().trim();
@@ -159,6 +184,30 @@ export default function CompanyBank() {
         path="/company-bank"
         keywords="KIIT company question bank, Microsoft interview questions KIIT, Amazon KIIT, HighRadius interview questions, Deloitte KIIT, campus placement questions"
       />
+
+      {/* Pro Paywall Block */}
+      {paywallBlocked && !hasPro && (
+        <ProPaywall onUpgrade={() => setShowUpgradeModal(true)} />
+      )}
+
+      <PaymentModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        mode="subscription"
+        user={user}
+        onSuccess={() => {
+          setShowUpgradeModal(false);
+          setPaywallBlocked(false);
+          refreshAccess();
+          setLoading(true);
+          getCompanies()
+            .then((res) => { if (res.success) setCompanies(res.data); })
+            .finally(() => setLoading(false));
+        }}
+      />
+
+      {paywallBlocked && !hasPro ? null : (
+        <>
       
       {/* Toast Alert */}
       <AnimatePresence>
@@ -296,13 +345,21 @@ export default function CompanyBank() {
 
       {/* ── QUESTION CONTRIBUTION MODAL ── */}
       <AnimatePresence>
-        {isModalOpen && (
-          <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        {isModalOpen && createPortal(
+          <div
+            className="fixed inset-0 z-[99999] flex items-center justify-center p-4 overflow-y-auto"
+            style={{
+              backgroundColor: "rgba(0,0,0,0.65)",
+              backdropFilter: "blur(8px)",
+              WebkitBackdropFilter: "blur(8px)",
+            }}
+            onClick={(e) => { if (e.target === e.currentTarget) setIsModalOpen(false); }}
+          >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border-2 p-6 sm:p-8 shadow-2xl space-y-5 relative bg-[#F6E9D2]"
+              className="w-full max-w-2xl max-h-[90vh] my-auto overflow-y-auto rounded-3xl border-2 p-6 sm:p-8 shadow-2xl space-y-5 relative bg-[#F6E9D2]"
               style={{ borderColor: "#0FA34E" }}
             >
               {/* Modal Top */}
@@ -511,10 +568,13 @@ export default function CompanyBank() {
                 </button>
               </form>
             </motion.div>
-          </div>
+          </div>,
+          document.body
         )}
       </AnimatePresence>
 
+      </>
+      )}
     </div>
   );
 }

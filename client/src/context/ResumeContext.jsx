@@ -11,23 +11,26 @@ const initialState = {
   file: null,
   result: null,
   error: null,
+  paywallError: null,
   progressStep: 0,
 };
 
 function reducer(state, action) {
   switch (action.type) {
     case 'SET_FILE':
-      return { ...state, file: action.payload, status: 'idle', error: null, result: null };
+      return { ...state, file: action.payload, status: 'idle', error: null, paywallError: null, result: null };
     case 'UPLOADING':
-      return { ...state, status: 'uploading', progressStep: 0, error: null };
+      return { ...state, status: 'uploading', progressStep: 0, error: null, paywallError: null };
     case 'SET_STEP':
       return { ...state, progressStep: action.payload };
     case 'ANALYZING':
       return { ...state, status: 'analyzing' };
     case 'COMPLETE':
-      return { ...state, status: 'complete', result: action.payload, error: null };
+      return { ...state, status: 'complete', result: action.payload, error: null, paywallError: null };
     case 'ERROR':
-      return { ...state, status: 'error', error: action.payload };
+      return { ...state, status: 'error', error: action.payload, paywallError: null };
+    case 'PAYWALL':
+      return { ...state, status: 'idle', error: null, paywallError: action.payload };
     case 'RESET':
       return { ...initialState };
     default:
@@ -110,7 +113,11 @@ export function ResumeProvider({ children }) {
       })
       .catch((err) => {
         clearTimers();
-        dispatch({ type: 'ERROR', payload: err });
+        if (err?.code === 402) {
+          dispatch({ type: 'PAYWALL', payload: err });
+        } else {
+          dispatch({ type: 'ERROR', payload: err });
+        }
       });
   }, [advanceStep, clearTimers]);
 
@@ -131,6 +138,7 @@ export function ResumeProvider({ children }) {
     selectFile,
     retry,
     reset,
+    clearPaywall: () => dispatch({ type: 'RESET' }),
     stepLabels: STEP_LABELS,
     stepMinDurations: STEP_MIN_DURATIONS,
   };

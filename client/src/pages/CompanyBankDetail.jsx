@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link, useParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -188,6 +189,17 @@ export default function CompanyBankDetail() {
       }));
     }
   }, [user]);
+
+  useEffect(() => {
+    if (isModalOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isModalOpen]);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -421,13 +433,21 @@ export default function CompanyBankDetail() {
 
       {/* ── QUESTION CONTRIBUTION MODAL ── */}
       <AnimatePresence>
-        {isModalOpen && (
-          <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        {isModalOpen && createPortal(
+          <div
+            className="fixed inset-0 z-[99999] flex items-center justify-center p-4 overflow-y-auto"
+            style={{
+              backgroundColor: "rgba(0,0,0,0.65)",
+              backdropFilter: "blur(8px)",
+              WebkitBackdropFilter: "blur(8px)",
+            }}
+            onClick={(e) => { if (e.target === e.currentTarget) setIsModalOpen(false); }}
+          >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border-2 p-6 sm:p-8 shadow-2xl space-y-5 relative bg-[#F6E9D2]"
+              className="w-full max-w-2xl max-h-[90vh] my-auto overflow-y-auto rounded-3xl border-2 p-6 sm:p-8 shadow-2xl space-y-5 relative bg-[#F6E9D2]"
               style={{ borderColor: "#0FA34E" }}
             >
               {/* Modal Top */}
@@ -629,7 +649,8 @@ export default function CompanyBankDetail() {
                 </button>
               </form>
             </motion.div>
-          </div>
+          </div>,
+          document.body
         )}
       </AnimatePresence>
 

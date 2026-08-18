@@ -1,6 +1,7 @@
 import { Router } from "express";
 import isAuthenticated from "../middleware/isAuthenticated.js";
 import isAdmin from "../middleware/isAdmin.js";
+import requiresAccess from "../middleware/requiresAccess.js";
 import {
   listCompanies,
   getCompany,
@@ -16,10 +17,12 @@ import {
 
 const router = Router();
 
-// ─── Signed-in users ──────────────────────────────────────────────────────────
-router.get("/companies", isAuthenticated, listCompanies);
-router.get("/companies/:id", isAuthenticated, getCompany);
-router.get("/companies/:id/questions", isAuthenticated, listCompanyQuestions);
+const proGate = requiresAccess("company_bank", { noFreeTrial: true });
+
+// ─── Signed-in users (Pro or Admin) ──────────────────────────────────────────
+router.get("/companies", isAuthenticated, proGate, listCompanies);
+router.get("/companies/:id", isAuthenticated, proGate, getCompany);
+router.get("/companies/:id/questions", isAuthenticated, proGate, listCompanyQuestions);
 router.post("/contribute", isAuthenticated, contributeQuestion);
 
 // ─── Admin only ───────────────────────────────────────────────────────────────
@@ -32,3 +35,4 @@ router.put("/questions/:qid", isAuthenticated, isAdmin, updateCompanyQuestion);
 router.delete("/questions/:qid", isAuthenticated, isAdmin, deleteCompanyQuestion);
 
 export default router;
+

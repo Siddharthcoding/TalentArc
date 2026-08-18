@@ -3,12 +3,11 @@ import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Menu, X, LogOut, FileText, Building2, FileCheck,
-  Sliders, Target, Users, LayoutDashboard, Settings,
+  Sliders, Target, Users, LayoutDashboard, Settings, Crown,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/utils/cn';
 
-const ADMIN_EMAILS = ['23052921@kiit.ac.in', 'kampusace@gmail.com'];
 
 const KonarkWheel = ({ className = 'w-7 h-7', color = '#0FA34E' }) => (
   <svg className={className} viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -37,6 +36,7 @@ const navLinks = [
   { href: '/assessment', label: 'Mock Tests' },
   { href: '/resume-builder', label: 'Resume Builder' },
   { href: '/doubt-sessions', label: 'Doubt Sessions' },
+  { href: '/pricing', label: 'Pricing' },
   { href: '/contact', label: 'Help' },
 ];
 
@@ -68,7 +68,7 @@ export default function Navbar() {
   const location = useLocation();
   const { isAuthenticated, loading, user, login, logout } = useAuth();
 
-  const isAdmin = user && ADMIN_EMAILS.includes(user.email?.toLowerCase());
+  const isAdmin = Boolean(user?.isAdmin);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -220,6 +220,16 @@ export default function Navbar() {
                     >
                       <FileText className="w-4 h-4" />
                       My Saved Reports
+                    </Link>
+
+                    <Link
+                      to="/pricing"
+                      onClick={() => setAvatarOpen(false)}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-2xl text-xs font-bold transition-colors hover:bg-[#D7F27A]"
+                      style={{ color: '#0FA34E' }}
+                    >
+                      <Crown className="w-4 h-4 text-[#0FA34E]" />
+                      Pricing &amp; Pro Plan (₹49)
                     </Link>
 
                     {isAdmin && (

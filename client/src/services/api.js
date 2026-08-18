@@ -38,6 +38,9 @@ apiClient.interceptors.response.use(
         try { localStorage.removeItem('talentarc-token'); } catch {}
         return Promise.reject({ title: 'Session Expired', message: data?.error || 'Please sign in again.' });
       }
+      if (status === 402) {
+        return Promise.reject({ title: 'Upgrade Required', message: data?.error || 'Please upgrade to Pro.', reason: data?.reason, service: data?.service, code: 402 });
+      }
       if (status === 403) {
         return Promise.reject({ title: 'Access Denied', message: data?.error || 'You do not have access to this action.' });
       }
@@ -268,6 +271,31 @@ export async function submitContactForm(payload) {
   return data;
 }
 
+// ─── Payments ───────────────────────────────────────────────────────────────────
+
+export async function getPaymentStatus() {
+  const { data } = await apiClient.get('/payments/status');
+  return data;
+}
+
+export async function createSubscriptionOrder() {
+  const { data } = await apiClient.post('/payments/create-subscription-order');
+  return data;
+}
+
+export async function verifySubscription(payload) {
+  const { data } = await apiClient.post('/payments/verify-subscription', payload);
+  return data;
+}
+
+export async function createDoubtOrder(sessionId) {
+  const { data } = await apiClient.post('/payments/create-doubt-order', { sessionId });
+  return data;
+}
+
+export async function verifyDoubtPayment(payload) {
+  const { data } = await apiClient.post('/payments/verify-doubt', payload);
+  return data;
+}
+
 export default apiClient;
-
-

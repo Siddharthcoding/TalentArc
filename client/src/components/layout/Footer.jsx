@@ -59,6 +59,7 @@ export default function Footer() {
             <Link to="/assessment" className="hover:text-[#C6FF3D] transition-colors">Mock Assessment</Link>
             <Link to="/resume-builder" className="hover:text-[#C6FF3D] transition-colors">Resume Builder</Link>
             <Link to="/doubt-sessions" className="hover:text-[#C6FF3D] transition-colors">Doubt Sessions</Link>
+            <Link to="/pricing" className="hover:text-[#C6FF3D] transition-colors">Pricing &amp; Plans</Link>
             <Link to="/contact" className="text-[#C6FF3D] hover:underline transition-all">Help &amp; Contact</Link>
           </div>
         </div>
