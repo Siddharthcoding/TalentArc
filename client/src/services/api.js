@@ -1,7 +1,9 @@
 import axios from 'axios';
 
+const backendUrl = (import.meta.env.VITE_BACKEND_URL || '').replace(/\/$/, '');
+
 const apiClient = axios.create({
-  baseURL: '/api',
+  baseURL: `${backendUrl}/api`,
   timeout: 60000,
   headers: { Accept: 'application/json' },
 });

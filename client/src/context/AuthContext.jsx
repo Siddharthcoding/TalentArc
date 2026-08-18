@@ -2,6 +2,7 @@ import { createContext, useContext, useReducer, useEffect, useCallback } from 'r
 import { getMe, logout as apiLogout } from '@/services/api';
 
 const TOKEN_KEY = 'talentarc-token';
+const BACKEND_URL = (import.meta.env.VITE_BACKEND_URL || '').replace(/\/$/, '');
 
 const initialState = {
   user: null,
@@ -93,9 +94,8 @@ export function AuthProvider({ children }) {
       sessionStorage.setItem('authRedirect', `${window.location.pathname}${window.location.search}${window.location.hash}`);
     } catch {
     }
-    const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
     const frontendUrl = encodeURIComponent(window.location.origin);
-    window.location.href = `${backendUrl}/api/auth/google?frontendUrl=${frontendUrl}`;
+    window.location.href = `${BACKEND_URL}/api/auth/google?frontendUrl=${frontendUrl}`;
   }, []);
 
   const logout = useCallback(async () => {
