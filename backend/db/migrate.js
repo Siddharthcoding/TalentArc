@@ -193,14 +193,6 @@ const CREATE_DOUBT_BOOKINGS_TABLE = `
   );
 `;
 
-const SEED_DOUBT_SESSIONS = [
-  { mentor: 'Ananya Sharma', role: 'Placed at Microsoft (\u20b951.0 LPA)', batch: "KIIT CSE '24 Alum", topic: 'Cracking HighRadius & Microsoft Coding & Technical Rounds', session_date: 'Today, 7:00 PM IST', duration: '60 Mins', total_seats: 15, booked_seats: 12, tags: ['DSA', 'Interview Tips', 'System Design'], avatar: 'AS', meet_link: 'https://meet.google.com/kampus-ace-doubt-1' },
-  { mentor: 'Sourav Das', role: 'Placed at HighRadius (\u20b918.5 LPA)', batch: "KIIT IT '24 Alum", topic: 'HighRadius OA & SQL Live Query Masterclass + Capstone Tips', session_date: 'Tomorrow, 6:30 PM IST', duration: '90 Mins', total_seats: 20, booked_seats: 16, tags: ['HighRadius', 'SQL', 'Java'], avatar: 'SD', meet_link: 'https://meet.google.com/kampus-ace-doubt-2' },
-  { mentor: 'Priyanka Sahoo', role: 'Placed at Deloitte USI (\u20b911.5 LPA)', batch: "KIIT ECE '24 Alum", topic: 'Deloitte Case Studies & AMCAT Aptitude Fast Tricks', session_date: 'Sat, 16 Aug - 5:00 PM', duration: '60 Mins', total_seats: 15, booked_seats: 11, tags: ['Deloitte', 'Aptitude', 'GD'], avatar: 'PS', meet_link: 'https://meet.google.com/kampus-ace-doubt-3' },
-  { mentor: 'Rohan Mohanty', role: 'Placed at Zscaler (\u20b928.0 LPA)', batch: "KIIT CSE '24 Alum", topic: 'Low-Level System Design & C++ Pointers / Multithreading', session_date: 'Sun, 17 Aug - 4:00 PM', duration: '75 Mins', total_seats: 12, booked_seats: 9, tags: ['Zscaler', 'LLD', 'OS'], avatar: 'RM', meet_link: 'https://meet.google.com/kampus-ace-doubt-4' },
-  { mentor: 'Subhashree Jena', role: 'Placed at PwC India (\u20b99.0 LPA)', batch: "KIIT CSSE '24 Alum", topic: 'Resume & Portfolio Review - Live 1-on-1 Grill Session', session_date: 'Mon, 18 Aug - 8:00 PM', duration: '60 Mins', total_seats: 10, booked_seats: 7, tags: ['Resume', 'HR', 'Cybersecurity'], avatar: 'SJ', meet_link: 'https://meet.google.com/kampus-ace-doubt-5' },
-  { mentor: 'Aman Patnaik', role: 'Placed at Amazon (\u20b945.0 LPA)', batch: "KIIT CSE '23 Alum", topic: 'Amazon Leadership Principles & DP Optimization Tricks', session_date: 'Tue, 19 Aug - 7:30 PM', duration: '90 Mins', total_seats: 15, booked_seats: 14, tags: ['Amazon', 'DP', 'Behavioral'], avatar: 'AP', meet_link: 'https://meet.google.com/kampus-ace-doubt-6' },
-];
 
 const SEED_QUESTIONS = [
   {
@@ -302,18 +294,6 @@ export default async function migrate() {
     await client.query(CREATE_DOUBT_BOOKINGS_TABLE);
     console.log("Doubt session tables checked/created");
 
-    const doubtCount = await client.query("SELECT COUNT(*) FROM doubt_sessions");
-    if (parseInt(doubtCount.rows[0].count, 10) === 0) {
-      console.log("Seeding doubt_sessions...");
-      for (const s of SEED_DOUBT_SESSIONS) {
-        await client.query(
-          `INSERT INTO doubt_sessions (mentor, role, batch, topic, session_date, duration, total_seats, booked_seats, tags, avatar, meet_link)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-          [s.mentor, s.role, s.batch, s.topic, s.session_date, s.duration, s.total_seats, s.booked_seats, s.tags, s.avatar, s.meet_link]
-        );
-      }
-      console.log("Doubt sessions seeded");
-    }
 
     // Doubt poll tables
     await client.query(`
@@ -346,35 +326,6 @@ export default async function migrate() {
     `);
     console.log("Doubt poll tables checked/created");
 
-    const pollCountRes = await client.query("SELECT COUNT(*) FROM doubt_polls");
-    if (parseInt(pollCountRes.rows[0].count, 10) === 0) {
-      console.log("Seeding initial doubt poll...");
-      const pollInsert = await client.query(`
-        INSERT INTO doubt_polls (title, description)
-        VALUES (
-          'Which company''s OA / Technical interview prep session do you want arranged next?',
-          'Vote for the target recruiter where you need live alumni guidance, SQL schema walkthroughs, or coding masterclasses. Admin schedules sessions based on top votes!'
-        ) RETURNING id
-      `);
-      const pollId = pollInsert.rows[0].id;
-
-      const seedOptions = [
-        { text: 'Microsoft - DSA Hard & Low Level System Design Masterclass', company: 'Microsoft', votes: 64 },
-        { text: 'Amazon - DP Optimization & Leadership Principles Drill', company: 'Amazon', votes: 58 },
-        { text: 'HighRadius - Java & SQL Live OA Query Masterclass', company: 'HighRadius', votes: 52 },
-        { text: 'Deloitte USI - Case Studies & AMCAT Aptitude Tricks', company: 'Deloitte', votes: 38 },
-        { text: 'Zscaler - C++ Multithreading & OS Internals Drill', company: 'Zscaler', votes: 31 },
-        { text: 'PwC India - Cybersec & Technical Case Interview Review', company: 'PwC India', votes: 22 },
-      ];
-
-      for (const opt of seedOptions) {
-        await client.query(`
-          INSERT INTO doubt_poll_options (poll_id, option_text, company_name, votes_count)
-          VALUES ($1, $2, $3, $4)
-        `, [pollId, opt.text, opt.company, opt.votes]);
-      }
-      console.log("Initial doubt poll seeded successfully");
-    }
 
     console.log("Database migrations complete");
 
@@ -396,3 +347,5 @@ if (process.argv[1] && process.argv[1].replace(/\\/g, '/').endsWith("db/migrate.
       process.exit(1);
     });
 }
+
+

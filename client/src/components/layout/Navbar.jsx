@@ -82,8 +82,21 @@ export default function Navbar() {
         setAvatarOpen(false);
       }
     }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+
+    function handleEscape(e) {
+      if (e.key === 'Escape') {
+        setAvatarOpen(false);
+      }
+    }
+
+    document.addEventListener('pointerdown', handleClickOutside, true);
+    document.addEventListener('click', handleClickOutside, true);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('pointerdown', handleClickOutside, true);
+      document.removeEventListener('click', handleClickOutside, true);
+      document.removeEventListener('keydown', handleEscape);
+    };
   }, []);
 
   useEffect(() => { setMobileOpen(false); setAvatarOpen(false); }, [location]);

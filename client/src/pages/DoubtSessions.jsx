@@ -40,19 +40,10 @@ import { useAuth } from '@/context/AuthContext';
 import SEO from '@/components/SEO';
 import PaymentModal from '@/components/payment/PaymentModal';
 
-const FALLBACK_SESSIONS = [
-  { id: 'doubt-1', mentor: 'SDE at Microsoft', role: 'SDE at Microsoft (₹51.0 LPA)', batch: "KIIT CSE '24 Alum", topic: 'Cracking HighRadius & Microsoft Coding & Technical Rounds', date: 'Today, 7:00 PM IST', duration: '60 Mins', totalSeats: 15, bookedSeats: 12, tags: ['DSA', 'Interview Tips', 'System Design'], avatar: 'MS', meetLink: 'https://meet.google.com/kampus-ace-doubt-1' },
-  { id: 'doubt-2', mentor: 'SDE at HighRadius', role: 'SDE at HighRadius (₹18.5 LPA)', batch: "KIIT IT '24 Alum", topic: 'HighRadius OA & SQL Live Query Masterclass + Capstone Tips', date: 'Tomorrow, 6:30 PM IST', duration: '90 Mins', totalSeats: 20, bookedSeats: 16, tags: ['HighRadius', 'SQL', 'Java'], avatar: 'HR', meetLink: 'https://meet.google.com/kampus-ace-doubt-2' },
-  { id: 'doubt-3', mentor: 'Consultant at Deloitte', role: 'Consultant at Deloitte USI (₹11.5 LPA)', batch: "KIIT ECE '24 Alum", topic: 'Deloitte Case Studies & AMCAT Aptitude Fast Tricks', date: 'Sat, 16 Aug - 5:00 PM', duration: '60 Mins', totalSeats: 15, bookedSeats: 11, tags: ['Deloitte', 'Aptitude', 'GD'], avatar: 'DL', meetLink: 'https://meet.google.com/kampus-ace-doubt-3' },
-  { id: 'doubt-4', mentor: 'Security Engineer at Zscaler', role: 'Security Engineer at Zscaler (₹28.0 LPA)', batch: "KIIT CSE '24 Alum", topic: 'Low-Level System Design & C++ Pointers / Multithreading', date: 'Sun, 17 Aug - 4:00 PM', duration: '75 Mins', totalSeats: 12, bookedSeats: 9, tags: ['Zscaler', 'LLD', 'OS'], avatar: 'ZS', meetLink: 'https://meet.google.com/kampus-ace-doubt-4' },
-  { id: 'doubt-5', mentor: 'Associate at PwC', role: 'Associate at PwC India (₹9.0 LPA)', batch: "KIIT CSSE '24 Alum", topic: 'Resume & Portfolio Review - Live 1-on-1 Grill Session', date: 'Mon, 18 Aug - 8:00 PM', duration: '60 Mins', totalSeats: 10, bookedSeats: 7, tags: ['Resume', 'HR', 'Cybersecurity'], avatar: 'PW', meetLink: 'https://meet.google.com/kampus-ace-doubt-5' },
-  { id: 'doubt-6', mentor: 'SDE at Amazon', role: 'SDE at Amazon (₹45.0 LPA)', batch: "KIIT CSE '23 Alum", topic: 'Amazon Leadership Principles & DP Optimization Tricks', date: 'Tue, 19 Aug - 7:30 PM', duration: '90 Mins', totalSeats: 15, bookedSeats: 14, tags: ['Amazon', 'DP', 'Behavioral'], avatar: 'AZ', meetLink: 'https://meet.google.com/kampus-ace-doubt-6' },
-];
-
 
 export default function DoubtSessions() {
   const { user } = useAuth();
-  const [sessions, setSessions] = useState(FALLBACK_SESSIONS);
+  const [sessions, setSessions] = useState([]);
   const [loadingSessions, setLoadingSessions] = useState(true);
   const [bookingId, setBookingId] = useState(null);
   const [toast, setToast] = useState(null);
@@ -73,7 +64,7 @@ export default function DoubtSessions() {
   const [isCreatePollOpen, setIsCreatePollOpen] = useState(false);
   const [newPollTitle, setNewPollTitle] = useState('');
   const [newPollDesc, setNewPollDesc] = useState('');
-  const [newPollOptionsText, setNewPollOptionsText] = useState('HighRadius - SQL & Java OA Query Drill\nMicrosoft - DSA Hard & Low-Level Design\nDeloitte USI - AMCAT Aptitude & Case Study\nAmazon - DP & Leadership Principles');
+  const [newPollOptionsText, setNewPollOptionsText] = useState('');
   const [creatingPoll, setCreatingPoll] = useState(false);
 
   const isAdmin = Boolean(user?.isAdmin || user?.role === 'admin');
@@ -84,7 +75,7 @@ export default function DoubtSessions() {
     setLoadingSessions(true);
     fetchDoubtSessionsApi()
       .then((res) => {
-        if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+        if (res.success && Array.isArray(res.data)) {
           setSessions(res.data);
         }
       })
@@ -337,6 +328,12 @@ export default function DoubtSessions() {
           <div className="py-20 text-center">
             <RotateCw className="w-8 h-8 animate-spin mx-auto mb-3" style={{ color: '#0FA34E' }} />
             <p className="font-bold text-sm" style={{ color: '#0FA34E' }}>Loading live doubt clinics...</p>
+          </div>
+        ) : sessions.length === 0 ? (
+          <div className="p-8 text-center rounded-3xl border-2 bg-[#F6E9D2]" style={{ borderColor: '#0FA34E33' }}>
+            <Calendar className="w-10 h-10 mx-auto mb-2 opacity-60" style={{ color: '#0FA34E' }} />
+            <h3 className="font-display font-bold text-lg text-[#0FA34E]">No Doubt Sessions Yet</h3>
+            <p className="text-xs text-[#0B7C3C88] mt-1">The Kampus Ace team will publish upcoming alumni sessions shortly.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -796,7 +793,7 @@ export default function DoubtSessions() {
                     required
                     value={newPollOptionsText}
                     onChange={(e) => setNewPollOptionsText(e.target.value)}
-                    placeholder="HighRadius - SQL & Java OA Query Drill&#10;Microsoft - DSA Hard & Low-Level Design&#10;Deloitte USI - AMCAT & Case Study"
+                    placeholder="Company or topic option 1&#10;Company or topic option 2&#10;Company or topic option 3"
                     className="w-full px-4 py-2.5 bg-[#D7F27A] border-2 border-[#0FA34E]/30 rounded-2xl text-xs font-bold text-[#0FA34E] focus:outline-none focus:border-[#0FA34E]"
                   />
                   <p className="text-[10px] text-[#0B7C3C88] mt-1 font-medium">
@@ -851,3 +848,4 @@ export default function DoubtSessions() {
     </div>
   );
 }
+
