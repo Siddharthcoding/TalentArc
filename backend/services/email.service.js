@@ -1,7 +1,7 @@
 import "dotenv/config";
 import nodemailer from 'nodemailer';
 
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+const FRONTEND_URL = process.env.FRONTEND_URL?.replace(/\/$/, '');
 
 /**
  * Returns a configured Nodemailer transporter
@@ -811,5 +811,4 @@ export async function sendDoubtBookingPaymentConfirmationEmail({
     console.error('[Email] Failed to send doubt session booking confirmation email:', err.message);
   }
 }
-
 

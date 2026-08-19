@@ -2,12 +2,17 @@ import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import passport from "passport";
 import pool from "../db/pool.js";
 
+const BACKEND_URL = process.env.BACKEND_URL?.replace(/\/$/, "");
+const GOOGLE_CALLBACK_URL = process.env.GOOGLE_CALLBACK_URL || (
+  BACKEND_URL ? `${BACKEND_URL}/api/auth/google/callback` : undefined
+);
+
 passport.use(
   new GoogleStrategy(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: process.env.GOOGLE_CALLBACK_URL,
+      callbackURL: GOOGLE_CALLBACK_URL,
     },
     async (accessToken, refreshToken, profile, done) => {
       try {

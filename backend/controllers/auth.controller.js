@@ -2,12 +2,13 @@ import passport from "../config/passport.js";
 import { signToken, resolveAvatarUrl } from "../services/token.service.js";
 import pool from "../db/pool.js";
 
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
-const ALLOWED_FRONTEND_ORIGINS = new Set([
-  FRONTEND_URL,
-  "http://localhost:5173",
-  "http://127.0.0.1:5173",
-]);
+const FRONTEND_URL = process.env.FRONTEND_URL?.replace(/\/$/, "");
+const ALLOWED_FRONTEND_ORIGINS = new Set(
+  (process.env.ALLOWED_FRONTEND_ORIGINS || FRONTEND_URL || "")
+    .split(",")
+    .map((origin) => origin.trim().replace(/\/$/, ""))
+    .filter(Boolean)
+);
 
 function encodeState(payload) {
   return Buffer.from(JSON.stringify(payload)).toString("base64url");
