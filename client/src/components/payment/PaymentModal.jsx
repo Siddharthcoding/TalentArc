@@ -63,26 +63,9 @@ export default function PaymentModal({
         orderData = await onDoubtOrder();
       }
 
-      const { orderId, amount, currency, keyId, isDevMock } = orderData;
+      const { orderId, amount, currency, keyId } = orderData;
 
-      if (isDevMock) {
-        // Dev Sandbox simulated payment flow
-        await new Promise((resolve) => setTimeout(resolve, 800));
-        if (isSubscription) {
-          await verifySubscription({
-            razorpay_order_id: orderId,
-            razorpay_payment_id: `pay_dev_${Date.now()}`,
-            razorpay_signature: "dev_mock_signature",
-          });
-        } else {
-          await onDoubtVerify({
-            razorpay_order_id: orderId,
-            razorpay_payment_id: `pay_dev_${Date.now()}`,
-            razorpay_signature: "dev_mock_signature",
-          });
-        }
-      } else {
-        await new Promise((resolve, reject) => {
+      await new Promise((resolve, reject) => {
           const options = {
             key: (keyId || import.meta.env.VITE_RAZORPAY_KEY_ID || '').trim(),
             amount,
@@ -128,7 +111,6 @@ export default function PaymentModal({
           });
           rzp.open();
         });
-      }
 
       setSuccess(true);
       setLoading(false);
@@ -267,46 +249,6 @@ export default function PaymentModal({
                 ) : (
                   <><Zap className="w-4 h-4 text-[#D7F27A]" /> Pay {isSubscription ? '₹49 via UPI / Card' : '₹20 via UPI / Card'}</>
                 )}
-              </button>
-
-              {/* Dev Mode Instant Sandbox Simulation */}
-              <button
-                type="button"
-                onClick={async () => {
-                  setError(null);
-                  setLoading(true);
-                  try {
-                    const devOrderId = `order_dev_${Date.now()}`;
-                    const devPayId = `pay_dev_${Date.now()}`;
-                    if (isSubscription) {
-                      await verifySubscription({
-                        razorpay_order_id: devOrderId,
-                        razorpay_payment_id: devPayId,
-                        razorpay_signature: 'dev_mock_signature',
-                      });
-                    } else {
-                      await onDoubtVerify({
-                        razorpay_order_id: devOrderId,
-                        razorpay_payment_id: devPayId,
-                        razorpay_signature: 'dev_mock_signature',
-                      });
-                    }
-                    setSuccess(true);
-                    setLoading(false);
-                    setTimeout(() => {
-                      onSuccess?.();
-                      onClose();
-                      setSuccess(false);
-                    }, 2000);
-                  } catch (err) {
-                    setLoading(false);
-                    setError(err?.message || 'Simulation failed');
-                  }
-                }}
-                disabled={loading}
-                className="w-full py-2.5 rounded-xl font-mono font-bold text-xs flex items-center justify-center gap-2 transition-all hover:bg-[#D7F27A] border border-[#0FA34E]/30 text-[#0FA34E]"
-              >
-                ⚡ Dev Sandbox: Instant Test Payment (Free)
               </button>
 
               {isSubscription && (

@@ -67,7 +67,6 @@ export async function createSubscriptionOrder(req, res) {
       amount: order.amount,
       currency: order.currency,
       keyId: (process.env.RAZORPAY_KEY_ID || "").trim().replace(/^["']|["']$/g, ""),
-      isDevMock: order.isDevMock || false,
     });
   } catch (err) {
     const errorMsg = err?.error?.description || err?.message || "Failed to create payment order";
@@ -192,7 +191,6 @@ export async function createDoubtOrder(req, res) {
       amount: order.amount,
       currency: order.currency,
       keyId: (process.env.RAZORPAY_KEY_ID || "").trim().replace(/^["']|["']$/g, ""),
-      isDevMock: order.isDevMock || false,
       sessionInfo: {
         mentor: session.mentor,
         topic: session.topic,
