@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { flushSync } from 'react-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Menu, X, LogOut, FileText, Building2, FileCheck,
@@ -64,8 +65,10 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [avatarOpen, setAvatarOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const navRef = useRef(null);
   const avatarRef = useRef(null);
   const location = useLocation();
+  const navigate = useNavigate();
   const { isAuthenticated, loading, user, login, logout } = useAuth();
 
   const isAdmin = Boolean(user?.isAdmin);
@@ -86,20 +89,35 @@ export default function Navbar() {
     function handleEscape(e) {
       if (e.key === 'Escape') {
         setAvatarOpen(false);
+        setMobileOpen(false);
       }
     }
 
-    document.addEventListener('pointerdown', handleClickOutside, true);
-    document.addEventListener('click', handleClickOutside, true);
+    document.addEventListener('mousedown', handleClickOutside);
     document.addEventListener('keydown', handleEscape);
     return () => {
-      document.removeEventListener('pointerdown', handleClickOutside, true);
-      document.removeEventListener('click', handleClickOutside, true);
+      document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleEscape);
     };
   }, []);
 
-  useEffect(() => { setMobileOpen(false); setAvatarOpen(false); }, [location]);
+  useEffect(() => { setMobileOpen(false); setAvatarOpen(false); }, [location.pathname]);
+
+  const closeMenus = () => {
+    setMobileOpen(false);
+    setAvatarOpen(false);
+  };
+
+  const handleMenuLinkClick = (e, href) => {
+    e.preventDefault();
+    flushSync(closeMenus);
+    navigate(href);
+  };
+
+  const handleAuthAction = (action) => {
+    flushSync(closeMenus);
+    action();
+  };
 
   const isActive = (link) =>
     link.exact
@@ -108,6 +126,7 @@ export default function Navbar() {
 
   return (
     <header
+      ref={navRef}
       className="sticky top-0 left-0 right-0 z-50 transition-all duration-300"
       style={{
         background: scrolled ? 'rgba(215, 242, 122, 0.97)' : '#D7F27A',
@@ -184,7 +203,11 @@ export default function Navbar() {
           ) : isAuthenticated && user ? (
             <div className="relative" ref={avatarRef}>
               <button
-                onClick={() => setAvatarOpen(!avatarOpen)}
+                type="button"
+                onClick={() => {
+                  setMobileOpen(false);
+                  setAvatarOpen((open) => !open);
+                }}
                 className="flex items-center gap-2 pl-3 pr-1.5 py-1.5 rounded-full transition-all hover:shadow-md"
                 style={{
                   background: '#F6E9D2',
@@ -227,7 +250,7 @@ export default function Navbar() {
 
                     <Link
                       to="/reports"
-                      onClick={() => setAvatarOpen(false)}
+                      onClick={(e) => handleMenuLinkClick(e, '/reports')}
                       className="flex items-center gap-2.5 px-3 py-2 rounded-2xl text-xs font-bold transition-colors hover:bg-[#D7F27A]"
                       style={{ color: '#0FA34E' }}
                     >
@@ -237,7 +260,7 @@ export default function Navbar() {
 
                     <Link
                       to="/pricing"
-                      onClick={() => setAvatarOpen(false)}
+                      onClick={(e) => handleMenuLinkClick(e, '/pricing')}
                       className="flex items-center gap-2.5 px-3 py-2 rounded-2xl text-xs font-bold transition-colors hover:bg-[#D7F27A]"
                       style={{ color: '#0FA34E' }}
                     >
@@ -249,7 +272,7 @@ export default function Navbar() {
                       <>
                         <Link
                           to="/admin/company-bank"
-                          onClick={() => setAvatarOpen(false)}
+                          onClick={(e) => handleMenuLinkClick(e, '/admin/company-bank')}
                           className="flex items-center gap-2.5 px-3 py-2 rounded-2xl text-xs font-bold transition-colors hover:bg-[#D7F27A]"
                           style={{ color: '#0FA34E' }}
                         >
@@ -258,7 +281,7 @@ export default function Navbar() {
                         </Link>
                         <Link
                           to="/doubt-admin"
-                          onClick={() => setAvatarOpen(false)}
+                          onClick={(e) => handleMenuLinkClick(e, '/doubt-admin')}
                           className="flex items-center gap-2.5 px-3 py-2 rounded-2xl text-xs font-bold transition-colors hover:bg-[#D7F27A]"
                           style={{ color: '#0FA34E' }}
                         >
@@ -270,7 +293,8 @@ export default function Navbar() {
 
                     <div className="mt-1 pt-1 border-t" style={{ borderColor: 'rgba(15,163,78,0.12)' }}>
                       <button
-                        onClick={() => { setAvatarOpen(false); logout(); }}
+                        type="button"
+                        onClick={() => handleAuthAction(logout)}
                         className="flex items-center gap-2.5 w-full px-3 py-2 rounded-2xl text-xs font-bold transition-colors hover:bg-red-50"
                         style={{ color: '#E1584A' }}
                       >
@@ -284,7 +308,8 @@ export default function Navbar() {
             </div>
           ) : (
             <button
-              onClick={login}
+              type="button"
+              onClick={() => handleAuthAction(login)}
               className="flex items-center gap-2 font-bold text-xs px-4 py-2 rounded-full transition-all hover:opacity-90 shadow-md"
               style={{
                 background: '#0FA34E',
@@ -305,7 +330,14 @@ export default function Navbar() {
 
           {/* Mobile burger */}
           <button
-            onClick={() => setMobileOpen(!mobileOpen)}
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              flushSync(() => {
+                setAvatarOpen(false);
+                setMobileOpen((open) => !open);
+              });
+            }}
             className="lg:hidden p-2 rounded-full transition-colors"
             style={{ background: '#0FA34E22', color: '#0FA34E' }}
             aria-label="Toggle menu"
@@ -316,59 +348,74 @@ export default function Navbar() {
       </div>
 
       {/* Mobile Drawer */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="lg:hidden overflow-hidden"
-            style={{ borderTop: '1.5px solid rgba(15,163,78,0.15)', background: '#F6E9D2' }}
-          >
-            <div className="px-4 pt-4 pb-5 space-y-1">
-              {navLinks.map((link) => {
-                const active = isActive(link);
-                return (
-                  <Link
-                    key={link.href}
-                    to={link.href}
-                    onClick={() => setMobileOpen(false)}
-                    className={cn(
-                      'flex items-center gap-2.5 px-4 py-2.5 rounded-2xl text-sm font-bold transition-colors',
-                      active
-                        ? 'text-[#F6E9D2]'
-                        : 'text-[#0B7C3C] hover:bg-[#D7F27A]'
-                    )}
-                    style={active ? { background: '#0FA34E' } : {}}
-                  >
-                    {link.label}
-                  </Link>
-                );
-              })}
-              {/* Mobile sign in / out */}
-              <div className="pt-3 border-t mt-2" style={{ borderColor: 'rgba(15,163,78,0.15)' }}>
-                {isAuthenticated ? (
-                  <button
-                    onClick={() => { setMobileOpen(false); logout(); }}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-bold w-full transition-colors"
-                    style={{ color: '#E1584A' }}
-                  >
-                    <LogOut className="w-4 h-4" /> Sign Out
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => { setMobileOpen(false); login(); }}
-                    className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl font-bold text-sm"
-                    style={{ background: '#0FA34E', color: '#F6E9D2' }}
-                  >
-                    Sign In with Google
-                  </button>
-                )}
+      {mobileOpen && (
+        <>
+            <button
+              type="button"
+              aria-label="Close menu"
+              onClick={() => flushSync(closeMenus)}
+              className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[2px] lg:hidden"
+            />
+            <div
+              className="fixed right-3 top-[68px] z-50 lg:hidden w-[min(calc(100vw-24px),24rem)] overflow-hidden rounded-3xl p-2 text-left shadow-2xl"
+              style={{ background: '#F6E9D2', border: '2px solid rgba(15,163,78,0.25)' }}
+            >
+              {isAuthenticated && user && (
+                <div className="px-3 py-2.5 border-b mb-1" style={{ borderColor: 'rgba(15,163,78,0.12)' }}>
+                  <p className="font-bold text-sm truncate" style={{ color: '#0FA34E', fontFamily: '"Baloo 2", cursive' }}>
+                    {user.displayName || 'Student'}
+                  </p>
+                  <p className="text-[11px] font-mono truncate" style={{ color: '#0B7C3C88' }}>
+                    {user.email}
+                  </p>
+                </div>
+              )}
+              <div className="space-y-1">
+                {navLinks.map((link) => {
+                  const active = isActive(link);
+                  return (
+                    <Link
+                      key={link.href}
+                      to={link.href}
+                      onClick={(e) => handleMenuLinkClick(e, link.href)}
+                      className={cn(
+                        'flex items-center gap-2.5 px-3 py-2 rounded-2xl text-sm font-bold transition-colors',
+                        active
+                          ? 'text-[#F6E9D2]'
+                          : 'text-[#0B7C3C] hover:bg-[#D7F27A]'
+                      )}
+                      style={active ? { background: '#0FA34E' } : {}}
+                    >
+                      {link.label}
+                    </Link>
+                  );
+                })}
+                {/* Mobile sign in / out */}
+                <div className="pt-1 mt-1 border-t" style={{ borderColor: 'rgba(15,163,78,0.12)' }}>
+                  {isAuthenticated ? (
+                    <button
+                      type="button"
+                      onClick={() => handleAuthAction(logout)}
+                      className="flex items-center gap-2.5 w-full px-3 py-2 rounded-2xl text-sm font-bold transition-colors hover:bg-red-50"
+                      style={{ color: '#E1584A' }}
+                    >
+                      <LogOut className="w-4 h-4" /> Sign Out
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleAuthAction(login)}
+                      className="flex items-center justify-center gap-2 w-full px-3 py-2.5 rounded-2xl font-bold text-sm shadow-sm"
+                      style={{ background: '#0FA34E', color: '#F6E9D2' }}
+                    >
+                      Sign In with Google
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        </>
+      )}
     </header>
   );
 }

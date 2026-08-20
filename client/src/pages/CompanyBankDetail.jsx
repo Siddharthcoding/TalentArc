@@ -201,6 +201,15 @@ export default function CompanyBankDetail() {
     };
   }, [isModalOpen]);
 
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const shouldOpen = sessionStorage.getItem("openCompanyQuestionContribution");
+    if (shouldOpen === id) {
+      sessionStorage.removeItem("openCompanyQuestionContribution");
+      setIsModalOpen(true);
+    }
+  }, [id, isAuthenticated]);
+
   const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -242,10 +251,16 @@ export default function CompanyBankDetail() {
     setTimeout(() => setToast(null), 4000);
   };
 
+  const handleOpenContributeModal = () => {
+    setIsModalOpen(true);
+  };
+
   const handleContributeSubmit = async (e) => {
     e.preventDefault();
     if (!isAuthenticated) {
-      showToast("Please sign in to contribute.", "error");
+      sessionStorage.setItem("openCompanyQuestionContribution", id);
+      showToast("Please sign in to submit your question.", "error");
+      login();
       return;
     }
     if (!formData.questionTitle.trim()) {
@@ -368,16 +383,19 @@ export default function CompanyBankDetail() {
                 Verified
               </span>
             </div>
+            {company.role && (
+              <p className="mt-1 inline-flex items-center rounded-full bg-[#DFF5E6] px-3 py-1 text-xs font-bold text-[#0FA34E] border border-[#0FA34E]/20">
+                {company.role}
+              </p>
+            )}
             <p className="text-xs text-[#0B7C3C] mt-1 font-medium max-w-xl leading-relaxed">{company.description}</p>
           </div>
         </div>
 
         {/* Contribute button */}
         <button
-          onClick={() => {
-            if (!isAuthenticated) login();
-            else setIsModalOpen(true);
-          }}
+          type="button"
+          onClick={handleOpenContributeModal}
           className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-display font-extrabold text-xs sm:text-sm shadow-md transition-all hover:shadow-lg transform hover:-translate-y-0.5 shrink-0"
           style={{ background: "#0FA34E", color: "#F6E9D2", border: "2px solid rgba(198, 255, 61, 0.4)" }}
         >
@@ -432,8 +450,7 @@ export default function CompanyBankDetail() {
       </div>
 
       {/* ── QUESTION CONTRIBUTION MODAL ── */}
-      <AnimatePresence>
-        {isModalOpen && createPortal(
+      {isModalOpen && createPortal(
           <div
             className="fixed inset-0 z-[99999] flex items-center justify-center p-4 overflow-y-auto"
             style={{
@@ -461,6 +478,7 @@ export default function CompanyBankDetail() {
                   </p>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setIsModalOpen(false)}
                   className="p-1.5 rounded-full hover:bg-[#D7F27A] text-[#0B7C3C] transition-colors"
                 >
@@ -652,7 +670,6 @@ export default function CompanyBankDetail() {
           </div>,
           document.body
         )}
-      </AnimatePresence>
 
     </div>
   );

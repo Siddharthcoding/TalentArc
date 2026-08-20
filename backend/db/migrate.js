@@ -131,6 +131,7 @@ const CREATE_COMPANIES_TABLE = `
   CREATE TABLE IF NOT EXISTS companies (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
+    role TEXT NOT NULL DEFAULT 'General',
     description TEXT,
     logo_url TEXT,
     website TEXT,
@@ -157,7 +158,8 @@ const CREATE_COMPANY_QUESTIONS_TABLE = `
 `;
 
 const CREATE_COMPANY_INDEXES = `
-  CREATE UNIQUE INDEX IF NOT EXISTS companies_name_lower_idx ON companies (LOWER(name));
+  DROP INDEX IF EXISTS companies_name_lower_idx;
+  CREATE UNIQUE INDEX IF NOT EXISTS companies_name_role_lower_idx ON companies (LOWER(name), LOWER(role));
   CREATE INDEX IF NOT EXISTS company_questions_company_id_idx ON company_questions (company_id);
   CREATE INDEX IF NOT EXISTS company_questions_type_idx ON company_questions (type);
   CREATE INDEX IF NOT EXISTS company_questions_difficulty_idx ON company_questions (difficulty);
@@ -264,6 +266,7 @@ export default async function migrate() {
     await client.query(CREATE_QUESTIONS_STORE_TABLE);
     await client.query(CREATE_ASSESSMENTS_TABLE);
     await client.query(CREATE_COMPANIES_TABLE);
+    await client.query("ALTER TABLE companies ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'General'");
     await client.query(CREATE_COMPANY_QUESTIONS_TABLE);
     await client.query(CREATE_COMPANY_INDEXES);
     console.log("Database tables checked/created");

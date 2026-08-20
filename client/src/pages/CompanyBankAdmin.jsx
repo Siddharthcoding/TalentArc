@@ -33,7 +33,7 @@ import { useAuth } from "@/context/AuthContext";
 import SectionWrapper from "@/components/ui/SectionWrapper";
 import { cn } from "@/utils/cn";
 
-const emptyCompany = { name: "", description: "", logo_url: "", website: "" };
+const emptyCompany = { name: "", role: "", description: "", logo_url: "", website: "" };
 const emptyQuestion = {
   type: "text",
   title: "",
@@ -177,6 +177,7 @@ export default function CompanyBankAdmin() {
     if (selectedCompany) {
       setCompanyForm({
         name: selectedCompany.name || "",
+        role: selectedCompany.role || "",
         description: selectedCompany.description || "",
         logo_url: selectedCompany.logo_url || "",
         website: selectedCompany.website || "",
@@ -196,6 +197,7 @@ export default function CompanyBankAdmin() {
     try {
       const payload = {
         name: companyForm.name.trim(),
+        role: companyForm.role.trim(),
         description: companyForm.description.trim() || null,
         logo_url: companyForm.logo_url.trim() || null,
         website: companyForm.website.trim() || null,
@@ -461,7 +463,7 @@ export default function CompanyBankAdmin() {
                           {company.name}
                         </span>
                         <span className="block text-[10px] font-medium opacity-80">
-                          {company.question_count || 0} questions
+                          {company.role || "General"} · {company.question_count || 0} questions
                         </span>
                       </div>
                       {isSelected && (
@@ -522,7 +524,18 @@ export default function CompanyBankAdmin() {
                   </div>
 
                   <div>
-                    <label style={labelStyle}>Placement Overview / Round Description</label>
+                    <label style={labelStyle}>Hiring Role *</label>
+                    <input
+                      value={companyForm.role}
+                      onChange={(e) => setCompanyForm((form) => ({ ...form, role: e.target.value }))}
+                      style={inputStyle}
+                      placeholder="e.g. SDE, Data Analyst, Consultant, Product Intern"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label style={labelStyle}>Role-Specific Placement Process / Round Description</label>
                     <textarea
                       value={companyForm.description}
                       onChange={(e) => setCompanyForm((form) => ({ ...form, description: e.target.value }))}

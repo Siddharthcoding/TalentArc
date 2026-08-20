@@ -45,12 +45,12 @@ function validateQuestionPayload(payload) {
 export const listCompanies = async (req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT c.id, c.name, c.description, c.logo_url, c.website, c.created_at,
+      `SELECT c.id, c.name, c.role, c.description, c.logo_url, c.website, c.created_at,
               COUNT(q.id)::int AS question_count
        FROM companies c
        LEFT JOIN company_questions q ON q.company_id = c.id
        GROUP BY c.id
-       ORDER BY c.name ASC`
+       ORDER BY c.name ASC, c.role ASC`
     );
     res.json({ success: true, data: rows });
   } catch (err) {
@@ -62,7 +62,7 @@ export const listCompanies = async (req, res) => {
 export const getCompany = async (req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT c.id, c.name, c.description, c.logo_url, c.website, c.created_at,
+      `SELECT c.id, c.name, c.role, c.description, c.logo_url, c.website, c.created_at,
               COUNT(q.id)::int AS question_count
        FROM companies c
        LEFT JOIN company_questions q ON q.company_id = c.id
@@ -79,22 +79,25 @@ export const getCompany = async (req, res) => {
 };
 
 export const createCompany = async (req, res) => {
-  const { name, description, logo_url, website } = req.body;
+  const { name, role, description, logo_url, website } = req.body;
   if (!name || !name.trim()) {
     return res.status(400).json({ success: false, error: "Company name is required" });
+  }
+  if (!role || !role.trim()) {
+    return res.status(400).json({ success: false, error: "Role is required" });
   }
 
   try {
     const { rows } = await pool.query(
-      `INSERT INTO companies (name, description, logo_url, website, created_by)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING id, name, description, logo_url, website, created_at`,
-      [name.trim(), description || null, logo_url || null, website || null, req.user?.id || null]
+      `INSERT INTO companies (name, role, description, logo_url, website, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id, name, role, description, logo_url, website, created_at`,
+      [name.trim(), role.trim(), description || null, logo_url || null, website || null, req.user?.id || null]
     );
     res.status(201).json({ success: true, data: { ...rows[0], question_count: 0 } });
   } catch (err) {
     if (err.code === "23505") {
-      return res.status(409).json({ success: false, error: "A company with this name already exists" });
+      return res.status(409).json({ success: false, error: "A recruiter entry for this company and role already exists" });
     }
     console.error("[CompanyBank] createCompany error:", err);
     res.status(500).json({ success: false, error: "Failed to create company" });
@@ -102,24 +105,27 @@ export const createCompany = async (req, res) => {
 };
 
 export const updateCompany = async (req, res) => {
-  const { name, description, logo_url, website } = req.body;
+  const { name, role, description, logo_url, website } = req.body;
   if (!name || !name.trim()) {
     return res.status(400).json({ success: false, error: "Company name is required" });
+  }
+  if (!role || !role.trim()) {
+    return res.status(400).json({ success: false, error: "Role is required" });
   }
 
   try {
     const { rows } = await pool.query(
       `UPDATE companies
-       SET name=$1, description=$2, logo_url=$3, website=$4
-       WHERE id=$5
-       RETURNING id, name, description, logo_url, website, created_at`,
-      [name.trim(), description || null, logo_url || null, website || null, req.params.id]
+       SET name=$1, role=$2, description=$3, logo_url=$4, website=$5
+       WHERE id=$6
+       RETURNING id, name, role, description, logo_url, website, created_at`,
+      [name.trim(), role.trim(), description || null, logo_url || null, website || null, req.params.id]
     );
     if (!rows.length) return res.status(404).json({ success: false, error: "Company not found" });
     res.json({ success: true, data: rows[0] });
   } catch (err) {
     if (err.code === "23505") {
-      return res.status(409).json({ success: false, error: "A company with this name already exists" });
+      return res.status(409).json({ success: false, error: "A recruiter entry for this company and role already exists" });
     }
     console.error("[CompanyBank] updateCompany error:", err);
     res.status(500).json({ success: false, error: "Failed to update company" });
@@ -325,4 +331,3 @@ export const contributeQuestion = async (req, res) => {
     res.status(500).json({ success: false, error: "Failed to process question contribution." });
   }
 };
-

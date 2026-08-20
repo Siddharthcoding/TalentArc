@@ -96,6 +96,15 @@ export default function CompanyBank() {
   }, [isModalOpen]);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
+    const shouldOpen = sessionStorage.getItem("openCompanyQuestionContribution");
+    if (shouldOpen === "general") {
+      sessionStorage.removeItem("openCompanyQuestionContribution");
+      setIsModalOpen(true);
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
     getCompanies()
       .then((res) => {
         if (res.success) setCompanies(res.data);
@@ -117,6 +126,7 @@ export default function CompanyBank() {
     if (!query) return companies;
     return companies.filter((company) =>
       company.name.toLowerCase().includes(query) ||
+      (company.role || "").toLowerCase().includes(query) ||
       (company.description || "").toLowerCase().includes(query)
     );
   }, [companies, search]);
@@ -126,10 +136,16 @@ export default function CompanyBank() {
     setTimeout(() => setToast(null), 4000);
   };
 
+  const handleOpenContributeModal = () => {
+    setIsModalOpen(true);
+  };
+
   const handleContributeSubmit = async (e) => {
     e.preventDefault();
     if (!isAuthenticated) {
-      showToast("Please sign in to contribute questions.", "error");
+      sessionStorage.setItem("openCompanyQuestionContribution", "general");
+      showToast("Please sign in to submit your question.", "error");
+      login();
       return;
     }
     if (!formData.questionTitle.trim()) {
@@ -206,7 +222,7 @@ export default function CompanyBank() {
         }}
       />
 
-      {paywallBlocked && !hasPro ? null : (
+      {paywallBlocked && !hasPro && !isModalOpen ? null : (
         <>
       
       {/* Toast Alert */}
@@ -245,13 +261,8 @@ export default function CompanyBank() {
 
         {/* Contribution Action Button */}
         <button
-          onClick={() => {
-            if (!isAuthenticated) {
-              login();
-            } else {
-              setIsModalOpen(true);
-            }
-          }}
+          type="button"
+          onClick={handleOpenContributeModal}
           className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full font-display font-extrabold text-xs sm:text-sm transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 shrink-0"
           style={{
             background: "#0FA34E",
@@ -328,6 +339,11 @@ export default function CompanyBank() {
                   <h3 className="font-display font-extrabold text-xl text-[#0FA34E] group-hover:text-[#0B7C3C] transition-colors">
                     {company.name}
                   </h3>
+                  {company.role && (
+                    <p className="mt-1 inline-flex items-center rounded-full bg-[#DFF5E6] px-2.5 py-1 text-[10px] font-bold text-[#0FA34E] border border-[#0FA34E]/20">
+                      {company.role}
+                    </p>
+                  )}
                   <p className="text-xs text-[#0B7C3C] mt-2 line-clamp-2 font-medium leading-relaxed">
                     {company.description || "Round-by-round interview process, coding questions, and aptitude test transcripts."}
                   </p>
@@ -344,8 +360,7 @@ export default function CompanyBank() {
       )}
 
       {/* ── QUESTION CONTRIBUTION MODAL ── */}
-      <AnimatePresence>
-        {isModalOpen && createPortal(
+      {isModalOpen && createPortal(
           <div
             className="fixed inset-0 z-[99999] flex items-center justify-center p-4 overflow-y-auto"
             style={{
@@ -373,6 +388,7 @@ export default function CompanyBank() {
                   </p>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setIsModalOpen(false)}
                   className="p-1.5 rounded-full hover:bg-[#D7F27A] text-[#0B7C3C] transition-colors"
                 >
@@ -571,7 +587,6 @@ export default function CompanyBank() {
           </div>,
           document.body
         )}
-      </AnimatePresence>
 
       </>
       )}
