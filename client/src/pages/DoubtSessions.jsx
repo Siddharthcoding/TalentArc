@@ -519,6 +519,7 @@ export default function DoubtSessions() {
 
           {isAdmin && (
             <button
+              type="button"
               onClick={() => setIsCreatePollOpen(true)}
               className="inline-flex items-center gap-2 px-5 py-3 rounded-full font-display font-extrabold text-xs sm:text-sm shadow-md transition-all hover:opacity-90 self-start sm:self-auto shrink-0"
               style={{ background: '#0FA34E', color: '#D7F27A', border: '1.5px solid rgba(198, 255, 61, 0.4)' }}
@@ -722,8 +723,7 @@ export default function DoubtSessions() {
       {/* ══════════════════════════════════════════════════════════════════════════ */}
       {/* ── MODAL: CREATE CUSTOM POLL ─────────────────────────────────────────── */}
       {/* ══════════════════════════════════════════════════════════════════════════ */}
-      <AnimatePresence>
-        {isCreatePollOpen && createPortal(
+      {isCreatePollOpen && createPortal(
           <div
             className="fixed inset-0 z-[99999] flex items-center justify-center p-4 overflow-y-auto"
             style={{
@@ -827,7 +827,6 @@ export default function DoubtSessions() {
           </div>,
           document.body
         )}
-      </AnimatePresence>
 
       {/* Doubt Session Payment Modal */}
       <PaymentModal

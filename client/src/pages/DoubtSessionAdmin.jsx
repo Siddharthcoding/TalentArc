@@ -213,6 +213,7 @@ export default function DoubtSessionAdmin() {
           </p>
         </div>
         <button
+          type="button"
           onClick={openCreateForm}
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-bold text-sm transition-all hover:opacity-90 shadow-md"
           style={{ background: '#0FA34E', color: '#D7F27A' }}
@@ -223,8 +224,7 @@ export default function DoubtSessionAdmin() {
       </div>
 
       {/* ── Create/Edit Form Modal ── */}
-      <AnimatePresence>
-        {showForm && createPortal(
+      {showForm && createPortal(
           <div
             className="fixed inset-0 z-[99999] flex items-center justify-center p-4 overflow-y-auto"
             style={{
@@ -327,7 +327,6 @@ export default function DoubtSessionAdmin() {
           </div>,
           document.body
         )}
-      </AnimatePresence>
 
 
       {/* ── Sessions List ── */}
