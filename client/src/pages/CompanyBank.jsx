@@ -62,6 +62,7 @@ export default function CompanyBank() {
   const [toast, setToast] = useState(null);
   const [formData, setFormData] = useState({
     companyName: "",
+    role: "",
     roundType: "Online Assessment (OA)",
     questionTitle: "",
     questionType: "text",
@@ -143,9 +144,7 @@ export default function CompanyBank() {
   const handleContributeSubmit = async (e) => {
     e.preventDefault();
     if (!isAuthenticated) {
-      sessionStorage.setItem("openCompanyQuestionContribution", "general");
-      showToast("Please sign in to submit your question.", "error");
-      login();
+      showToast("Please sign in to contribute questions.", "error");
       return;
     }
     if (!formData.questionTitle.trim()) {
@@ -157,6 +156,7 @@ export default function CompanyBank() {
     try {
       const payload = {
         companyName: formData.companyName.trim() || "General KIIT Placement",
+        role: formData.role.trim() || "General Role",
         roundType: formData.roundType,
         questionTitle: formData.questionTitle.trim(),
         questionType: formData.questionType,
@@ -177,6 +177,7 @@ export default function CompanyBank() {
         showToast("🎉 Question submitted! Admin will verify and publish it.");
         setFormData((prev) => ({
           ...prev,
+          role: "",
           questionTitle: "",
           questionBody: "",
           image_url: "",
@@ -320,11 +321,11 @@ export default function CompanyBank() {
             >
               <Link
                 to={`/company-bank/${company.id}`}
-                className="bg-[#F6E9D2] border-2 border-[#0FA34E]/20 hover:border-[#0FA34E] p-6 rounded-3xl shadow-md hover:shadow-xl transition-all flex flex-col justify-between group h-full"
+                className="bg-[#F6E9D2] border-2 border-[#0FA34E]/20 hover:border-[#0FA34E] p-6 rounded-3xl shadow-md hover:shadow-xl transition-all flex flex-col justify-between group h-full relative"
               >
                 <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-12 h-12 rounded-2xl bg-[#0FA34E] text-[#F6E9D2] font-display font-extrabold text-xl flex items-center justify-center shadow">
+                  <div className="flex items-center justify-between mb-3.5">
+                    <div className="w-12 h-12 rounded-2xl bg-[#0FA34E] text-[#F6E9D2] font-display font-extrabold text-xl flex items-center justify-center shadow shrink-0">
                       {company.logo_url ? (
                         <img src={company.logo_url} alt="" className="w-full h-full object-cover rounded-2xl" />
                       ) : (
@@ -336,22 +337,38 @@ export default function CompanyBank() {
                     </span>
                   </div>
 
-                  <h3 className="font-display font-extrabold text-xl text-[#0FA34E] group-hover:text-[#0B7C3C] transition-colors">
+                  {/* Company Name */}
+                  <h3 className="font-display font-extrabold text-2xl text-[#0FA34E] group-hover:text-[#0B7C3C] transition-colors leading-tight">
                     {company.name}
                   </h3>
-                  {company.role && (
-                    <p className="mt-1 inline-flex items-center rounded-full bg-[#DFF5E6] px-2.5 py-1 text-[10px] font-bold text-[#0FA34E] border border-[#0FA34E]/20">
-                      {company.role}
+
+                  {/* Role Badge */}
+                  <div className="mt-1.5 mb-3 flex items-center gap-1.5 flex-wrap">
+                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-[#0FA34E] text-[#D7F27A] shadow-sm">
+                      <Layers className="w-3 h-3 text-[#D7F27A]" />
+                      <span>{company.role || "General Role"}</span>
+                    </span>
+                  </div>
+
+                  {/* Role Process Description */}
+                  <div className="bg-[#DFF5E6]/70 rounded-2xl p-3 border border-[#0FA34E]/15 mb-2">
+                    <p className="text-[10px] font-mono font-bold text-[#0FA34E] uppercase tracking-wider mb-1">
+                      Hiring Process & Rounds
                     </p>
-                  )}
-                  <p className="text-xs text-[#0B7C3C] mt-2 line-clamp-2 font-medium leading-relaxed">
-                    {company.description || "Round-by-round interview process, coding questions, and aptitude test transcripts."}
-                  </p>
+                    <p className="text-xs text-[#0B7C3C] line-clamp-3 font-medium leading-relaxed">
+                      {company.description || "Round-by-round interview process, coding questions, and aptitude test transcripts."}
+                    </p>
+                  </div>
                 </div>
 
-                <div className="mt-6 pt-4 border-t border-[#0FA34E]/15 flex items-center justify-between text-xs font-mono font-bold text-[#0FA34E]">
-                  <span>{company.question_count || 0}+ Questions</span>
-                  <ChevronRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
+                <div className="mt-4 pt-3 border-t border-[#0FA34E]/15 flex items-center justify-between text-xs font-mono font-bold text-[#0FA34E]">
+                  <span className="inline-flex items-center gap-1">
+                    <BookOpen className="w-3.5 h-3.5 text-[#0FA34E]" />
+                    {company.question_count || 0} Questions
+                  </span>
+                  <span className="inline-flex items-center gap-1 group-hover:translate-x-1 transition-transform font-display font-bold">
+                    View Role Bank <ChevronRight className="w-4 h-4" />
+                  </span>
                 </div>
               </Link>
             </motion.div>
@@ -399,13 +416,23 @@ export default function CompanyBank() {
               {/* Form */}
               <form onSubmit={handleContributeSubmit} className="space-y-4">
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <label style={labelStyle}>Recruiter / Company *</label>
                     <input
                       value={formData.companyName}
                       onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                      placeholder="e.g. HighRadius, Deloitte, Microsoft, PwC"
+                      placeholder="e.g. HighRadius, Amazon, Microsoft"
+                      style={inputStyle}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Hiring Role / Profile *</label>
+                    <input
+                      value={formData.role}
+                      onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                      placeholder="e.g. SDE, Consultant, QA"
                       style={inputStyle}
                       required
                     />

@@ -17,7 +17,9 @@ import {
   Tag,
   PlusCircle,
   X,
-  Send
+  Send,
+  Layers,
+  Sparkles
 } from "lucide-react";
 import { getCompany, getCompanyQuestions, contributeCompanyQuestion } from "@/services/api";
 import { useAuth } from "@/context/AuthContext";
@@ -273,6 +275,7 @@ export default function CompanyBankDetail() {
       const payload = {
         companyId: id,
         companyName: company?.name || "Target Company",
+        role: company?.role || "General",
         roundType: formData.roundType,
         questionTitle: formData.questionTitle.trim(),
         questionType: formData.questionType,
@@ -363,45 +366,89 @@ export default function CompanyBankDetail() {
         className="inline-flex items-center gap-1.5 text-xs font-bold text-[#0B7C3C] hover:opacity-75 transition-opacity"
       >
         <ArrowLeft className="w-4 h-4" />
-        All Companies
+        All Company Roles
       </Link>
 
       {/* Recruiter Header Banner */}
-      <div className="bg-[#F6E9D2] border-2 border-[#0FA34E]/20 p-6 sm:p-8 rounded-3xl shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-[#0FA34E] text-[#F6E9D2] font-display font-extrabold text-2xl flex items-center justify-center shadow">
-            {company.logo_url ? (
-              <img src={company.logo_url} alt="" className="w-full h-full object-cover rounded-2xl" />
-            ) : (
-              (company.name[0] || "?").toUpperCase()
-            )}
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="font-display text-2xl sm:text-4xl font-extrabold text-[#0FA34E]">{company.name}</h1>
-              <span className="font-mono text-[10px] font-bold bg-[#C6FF3D] text-[#0FA34E] px-2.5 py-0.5 rounded-full border border-[#0FA34E]/20">
-                Verified
-              </span>
+      <div className="bg-[#F6E9D2] border-2 border-[#0FA34E]/20 p-6 sm:p-8 rounded-3xl shadow-md space-y-6">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="flex items-start sm:items-center gap-4">
+            <div className="w-16 h-16 rounded-2xl bg-[#0FA34E] text-[#F6E9D2] font-display font-extrabold text-2xl flex items-center justify-center shadow shrink-0">
+              {company.logo_url ? (
+                <img src={company.logo_url} alt="" className="w-full h-full object-cover rounded-2xl" />
+              ) : (
+                (company.name[0] || "?").toUpperCase()
+              )}
             </div>
-            {company.role && (
-              <p className="mt-1 inline-flex items-center rounded-full bg-[#DFF5E6] px-3 py-1 text-xs font-bold text-[#0FA34E] border border-[#0FA34E]/20">
-                {company.role}
-              </p>
-            )}
-            <p className="text-xs text-[#0B7C3C] mt-1 font-medium max-w-xl leading-relaxed">{company.description}</p>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="font-display text-2xl sm:text-4xl font-extrabold text-[#0FA34E]">{company.name}</h1>
+                <span className="font-mono text-[10px] font-bold bg-[#C6FF3D] text-[#0FA34E] px-2.5 py-0.5 rounded-full border border-[#0FA34E]/20">
+                  Verified Track
+                </span>
+              </div>
+              <div className="mt-1.5 flex items-center gap-2 flex-wrap">
+                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-[#0FA34E] text-[#D7F27A] shadow-sm">
+                  <Layers className="w-3.5 h-3.5 text-[#D7F27A]" />
+                  <span>Role: {company.role || "General Role"}</span>
+                </span>
+                {company.website && (
+                  <a
+                    href={company.website}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs text-[#0FA34E] hover:underline font-semibold"
+                  >
+                    Official Careers &rarr;
+                  </a>
+                )}
+              </div>
+            </div>
           </div>
+
+          {/* Contribute button */}
+          <button
+            type="button"
+            onClick={handleOpenContributeModal}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-display font-extrabold text-xs sm:text-sm shadow-md transition-all hover:shadow-lg transform hover:-translate-y-0.5 shrink-0"
+            style={{ background: "#0FA34E", color: "#F6E9D2", border: "2px solid rgba(198, 255, 61, 0.4)" }}
+          >
+            <PlusCircle className="w-4 h-4 text-[#C6FF3D]" />
+            <span>Contribute {company.name} Question</span>
+          </button>
         </div>
 
-        {/* Contribute button */}
-        <button
-          type="button"
-          onClick={handleOpenContributeModal}
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-display font-extrabold text-xs sm:text-sm shadow-md transition-all hover:shadow-lg transform hover:-translate-y-0.5 shrink-0"
-          style={{ background: "#0FA34E", color: "#F6E9D2", border: "2px solid rgba(198, 255, 61, 0.4)" }}
-        >
-          <PlusCircle className="w-4 h-4 text-[#C6FF3D]" />
-          <span>Contribute {company.name} Question</span>
-        </button>
+        {/* Role Hiring Process & Rounds Details */}
+        <div className="p-4 rounded-2xl bg-[#DFF5E6]/80 border border-[#0FA34E]/20 space-y-1">
+          <p className="text-[11px] font-mono font-bold text-[#0FA34E] uppercase tracking-wider">
+            📋 Role-Specific Hiring Process & Selection Pipeline
+          </p>
+          <p className="text-xs sm:text-sm text-[#0B7C3C] font-medium leading-relaxed whitespace-pre-line">
+            {company.description || "Specific interview rounds, question formats, and selection pipeline for this role."}
+          </p>
+        </div>
+
+        {/* Other Roles Switcher for the Same Company */}
+        {company.other_roles && company.other_roles.length > 0 && (
+          <div className="pt-2 border-t border-[#0FA34E]/15 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-[#0B7C3C]">
+              <Layers className="w-4 h-4 text-[#0FA34E]" />
+              <span>Other roles at {company.name}:</span>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              {company.other_roles.map((other) => (
+                <Link
+                  key={other.id}
+                  to={`/company-bank/${other.id}`}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#D7F27A] text-[#0FA34E] hover:bg-[#0FA34E] hover:text-[#F6E9D2] transition-colors border border-[#0FA34E]/25 shadow-sm"
+                >
+                  <span>{other.role}</span>
+                  <span className="text-[10px] opacity-75 font-mono">({other.question_count || 0}) &rarr;</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Filter & Search Controls */}

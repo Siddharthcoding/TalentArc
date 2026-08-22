@@ -418,6 +418,7 @@ export async function notifyAdminOfBooking({ sessionTopic, studentEmail, student
  */
 export async function sendQuestionContributionEmail({
   companyName,
+  role,
   questionTitle,
   questionBody,
   roundType,
@@ -435,7 +436,7 @@ export async function sendQuestionContributionEmail({
   const pass = process.env.SMTP_PASS;
 
   if (!pass || adminRecipients.length === 0) {
-    console.log(`[Email] Question contribution logged:`, { companyName, questionTitle, image_url, contributorEmail });
+    console.log(`[Email] Question contribution logged:`, { companyName, role, questionTitle, image_url, contributorEmail });
     return;
   }
 
@@ -484,6 +485,11 @@ export async function sendQuestionContributionEmail({
           <span style="display: inline-block; background-color: #0FA34E; color: #FFFFFF; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 6px; margin-right: 6px;">
             ${companyName || 'General'}
           </span>
+          ${role ? `
+            <span style="display: inline-block; background-color: #D1FAE5; color: #065F46; border: 1px solid #A7F3D0; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 6px; margin-right: 6px;">
+              Role: ${role}
+            </span>
+          ` : ''}
           <span style="display: inline-block; background-color: #E2E8F0; color: #334155; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 6px; margin-right: 6px;">
             ${roundType || 'General Round'}
           </span>

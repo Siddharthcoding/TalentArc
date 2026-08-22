@@ -71,7 +71,18 @@ export const getCompany = async (req, res) => {
       [req.params.id]
     );
     if (!rows.length) return res.status(404).json({ success: false, error: "Company not found" });
-    res.json({ success: true, data: rows[0] });
+
+    // Fetch other roles for the same company
+    const otherRolesRes = await pool.query(
+      `SELECT c.id, c.name, c.role, c.description,
+              (SELECT COUNT(*)::int FROM company_questions WHERE company_id = c.id) AS question_count
+       FROM companies c
+       WHERE LOWER(c.name) = LOWER($1) AND c.id != $2
+       ORDER BY c.role ASC`,
+      [rows[0].name, req.params.id]
+    );
+
+    res.json({ success: true, data: { ...rows[0], other_roles: otherRolesRes.rows } });
   } catch (err) {
     console.error("[CompanyBank] getCompany error:", err);
     res.status(500).json({ success: false, error: "Failed to fetch company" });
@@ -275,6 +286,8 @@ export const contributeQuestion = async (req, res) => {
     const {
       companyName,
       companyId,
+      role,
+      targetRole,
       roundType,
       questionTitle,
       questionType = "text",
@@ -294,9 +307,13 @@ export const contributeQuestion = async (req, res) => {
     }
 
     let resolvedCompanyName = companyName;
-    if (!resolvedCompanyName && companyId) {
-      const companyRes = await pool.query(`SELECT name FROM companies WHERE id = $1`, [companyId]);
-      resolvedCompanyName = companyRes.rows[0]?.name || "Unspecified Company";
+    let resolvedRole = role || targetRole || "";
+    if (companyId) {
+      const companyRes = await pool.query(`SELECT name, role FROM companies WHERE id = $1`, [companyId]);
+      if (companyRes.rows.length) {
+        resolvedCompanyName = companyRes.rows[0].name;
+        resolvedRole = resolvedRole || companyRes.rows[0].role || "";
+      }
     }
 
     const studentName = contributorName || req.user?.displayName || "Student Contributor";
@@ -305,6 +322,7 @@ export const contributeQuestion = async (req, res) => {
     // Trigger non-blocking admin notification email
     sendQuestionContributionEmail({
       companyName: resolvedCompanyName,
+      role: resolvedRole,
       questionTitle: questionTitle.trim(),
       questionBody: questionBody?.trim() || "",
       roundType: roundType || "Online Assessment / Technical Round",
@@ -320,7 +338,6 @@ export const contributeQuestion = async (req, res) => {
     }).catch((err) => {
       console.error("[CompanyBank] Background email dispatch failed:", err);
     });
-
 
     res.json({
       success: true,
