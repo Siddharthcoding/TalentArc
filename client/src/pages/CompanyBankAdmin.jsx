@@ -121,6 +121,7 @@ export default function CompanyBankAdmin() {
   const [companies, setCompanies] = useState([]);
   const [questions, setQuestions] = useState([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState(searchParams.get("company") || "");
+  const [isCreatingNew, setIsCreatingNew] = useState(!searchParams.get("company"));
   const [companyForm, setCompanyForm] = useState(emptyCompany);
   const [questionForm, setQuestionForm] = useState(emptyQuestion);
   const [editingQuestionId, setEditingQuestionId] = useState(null);
@@ -130,24 +131,39 @@ export default function CompanyBankAdmin() {
   const [notice, setNotice] = useState(null);
 
   const selectedCompany = useMemo(
-    () => companies.find((company) => company.id === selectedCompanyId),
-    [companies, selectedCompanyId]
+    () => (isCreatingNew ? null : companies.find((company) => company.id === selectedCompanyId)),
+    [companies, selectedCompanyId, isCreatingNew]
   );
 
-  const loadCompanies = useCallback(async () => {
+  const loadCompanies = useCallback(async (selectId = null) => {
     setLoading(true);
     setError(null);
     try {
       const res = await getCompanies();
       if (!res.success) throw new Error(res.error || "Failed to load companies");
-      setCompanies(res.data);
-      if (!selectedCompanyId && res.data.length) setSelectedCompanyId(res.data[0].id);
+      const list = res.data || [];
+      setCompanies(list);
+
+      if (selectId) {
+        setSelectedCompanyId(selectId);
+        setIsCreatingNew(false);
+      } else if (!selectId && list.length > 0) {
+        // If we currently have a valid selected company in the list, keep it
+        setSelectedCompanyId((currentId) => {
+          if (currentId && list.some((c) => c.id === currentId)) {
+            return currentId;
+          }
+          // Only auto-select first if not explicitly creating new
+          return isCreatingNew ? "" : list[0].id;
+        });
+      }
+      return list;
     } catch (err) {
       setError(getErrorMessage(err, "Failed to load companies"));
     } finally {
       setLoading(false);
     }
-  }, [selectedCompanyId]);
+  }, [isCreatingNew]);
 
   const loadQuestions = useCallback(async (companyId) => {
     if (!companyId) {
@@ -168,13 +184,21 @@ export default function CompanyBankAdmin() {
   }, [loadCompanies]);
 
   useEffect(() => {
-    if (!selectedCompanyId) return;
+    if (isCreatingNew || !selectedCompanyId) {
+      setQuestions([]);
+      return;
+    }
     setSearchParams({ company: selectedCompanyId });
     loadQuestions(selectedCompanyId);
-  }, [loadQuestions, selectedCompanyId, setSearchParams]);
+  }, [loadQuestions, selectedCompanyId, isCreatingNew, setSearchParams]);
 
   useEffect(() => {
-    if (selectedCompany) {
+    if (isCreatingNew) {
+      setCompanyForm(emptyCompany);
+      setEditingQuestionId(null);
+      setQuestionForm(emptyQuestion);
+      setQuestions([]);
+    } else if (selectedCompany) {
       setCompanyForm({
         name: selectedCompany.name || "",
         role: selectedCompany.role || "",
@@ -182,12 +206,38 @@ export default function CompanyBankAdmin() {
         logo_url: selectedCompany.logo_url || "",
         website: selectedCompany.website || "",
       });
+      setEditingQuestionId(null);
+      setQuestionForm(emptyQuestion);
     } else {
       setCompanyForm(emptyCompany);
     }
+  }, [selectedCompany, isCreatingNew]);
+
+  const selectCompany = (companyId) => {
+    setIsCreatingNew(false);
+    setSelectedCompanyId(companyId);
+    setError(null);
+    setNotice(null);
+  };
+
+  const startNewCompany = () => {
+    setIsCreatingNew(true);
+    setSelectedCompanyId("");
+    setCompanyForm(emptyCompany);
+    setQuestions([]);
     setEditingQuestionId(null);
     setQuestionForm(emptyQuestion);
-  }, [selectedCompany]);
+    setSearchParams({});
+    setError(null);
+    setNotice(null);
+  };
+
+  const cancelNewCompany = () => {
+    setIsCreatingNew(false);
+    if (companies.length > 0) {
+      setSelectedCompanyId(companies[0].id);
+    }
+  };
 
   const saveCompany = async (event) => {
     event.preventDefault();
@@ -202,13 +252,18 @@ export default function CompanyBankAdmin() {
         logo_url: companyForm.logo_url.trim() || null,
         website: companyForm.website.trim() || null,
       };
-      const res = selectedCompany
+
+      const isUpdate = !isCreatingNew && !!selectedCompany?.id;
+      const res = isUpdate
         ? await updateCompany(selectedCompany.id, payload)
         : await createCompany(payload);
+
       if (!res.success) throw new Error(res.error || "Could not save company");
-      await loadCompanies();
+
+      setIsCreatingNew(false);
+      await loadCompanies(res.data.id);
       setSelectedCompanyId(res.data.id);
-      setNotice(selectedCompany ? "Company details updated successfully." : "Company created successfully.");
+      setNotice(isUpdate ? `Recruiter track for ${payload.name} (${payload.role}) updated successfully.` : `New recruiter track for ${payload.name} (${payload.role}) created successfully!`);
     } catch (err) {
       setError(getErrorMessage(err, "Could not save company"));
     } finally {
@@ -218,30 +273,22 @@ export default function CompanyBankAdmin() {
 
   const removeCompany = async () => {
     if (!selectedCompany) return;
-    if (!window.confirm(`Delete ${selectedCompany.name} and all associated placement round questions?`)) return;
+    if (!window.confirm(`Delete ${selectedCompany.name} (${selectedCompany.role || "General"}) and all associated questions?`)) return;
     setSaving(true);
     setError(null);
     try {
       await deleteCompany(selectedCompany.id);
       setSelectedCompanyId("");
+      setIsCreatingNew(false);
       setCompanyForm(emptyCompany);
       setQuestions([]);
       await loadCompanies();
-      setNotice("Company deleted successfully.");
+      setNotice("Recruiter track deleted successfully.");
     } catch (err) {
       setError(getErrorMessage(err, "Could not delete company"));
     } finally {
       setSaving(false);
     }
-  };
-
-  const startNewCompany = () => {
-    setSelectedCompanyId("");
-    setCompanyForm(emptyCompany);
-    setQuestions([]);
-    setEditingQuestionId(null);
-    setQuestionForm(emptyQuestion);
-    setSearchParams({});
   };
 
   const saveQuestion = async (event) => {
@@ -380,11 +427,14 @@ export default function CompanyBankAdmin() {
           <button
             type="button"
             onClick={startNewCompany}
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full font-bold text-xs shadow-md transition-all hover:opacity-90 shrink-0"
+            className={cn(
+              "inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full font-bold text-xs shadow-md transition-all hover:opacity-90 shrink-0",
+              isCreatingNew ? "ring-2 ring-[#0FA34E] ring-offset-2 scale-105" : ""
+            )}
             style={{ background: "#0FA34E", color: "#D7F27A", border: "1.5px solid rgba(198,255,61,0.4)" }}
           >
             <Plus className="w-4 h-4" />
-            Add New Recruiter
+            <span>{isCreatingNew ? "+ Creating New Track" : "Add New Recruiter"}</span>
           </button>
         </div>
 
@@ -431,7 +481,7 @@ export default function CompanyBankAdmin() {
               style={{ background: "#F6E9D2", borderColor: "rgba(15, 163, 78, 0.22)" }}>
               <div className="flex items-center justify-between px-2 pb-2 border-b" style={{ borderColor: "rgba(15, 163, 78, 0.15)" }}>
                 <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#0FA34E]">
-                  Recruiters ({companies.length})
+                  Recruiter Tracks ({companies.length})
                 </span>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "#DFF5E6", color: "#0FA34E" }}>
                   Verified
@@ -440,12 +490,12 @@ export default function CompanyBankAdmin() {
 
               <div className="space-y-1 max-h-[560px] overflow-y-auto pr-1">
                 {companies.map((company) => {
-                  const isSelected = selectedCompanyId === company.id;
+                  const isSelected = !isCreatingNew && selectedCompanyId === company.id;
                   return (
                     <button
                       key={company.id}
                       type="button"
-                      onClick={() => setSelectedCompanyId(company.id)}
+                      onClick={() => selectCompany(company.id)}
                       className={cn(
                         "w-full text-left px-3.5 py-2.5 rounded-2xl transition-all flex items-center justify-between gap-2 border",
                         isSelected
@@ -496,20 +546,35 @@ export default function CompanyBankAdmin() {
                     <div className="flex items-center gap-2">
                       <Building2 className="w-4 h-4 text-[#0FA34E]" />
                       <h2 className="text-base font-extrabold text-[#0B7C3C]" style={{ fontFamily: '"Baloo 2", cursive' }}>
-                        {selectedCompany ? `Edit: ${selectedCompany.name}` : "Create New Recruiter Entry"}
+                        {isCreatingNew
+                          ? "Create New Recruiter Track"
+                          : selectedCompany
+                          ? `Edit: ${selectedCompany.name} (${selectedCompany.role || "General"})`
+                          : "Create New Recruiter Track"}
                       </h2>
                     </div>
-                    {selectedCompany && (
-                      <button
-                        type="button"
-                        onClick={removeCompany}
-                        disabled={saving}
-                        className="p-2 rounded-xl text-[#E1584A] bg-[#E1584A15] hover:bg-[#E1584A25] transition-colors"
-                        title="Delete this company"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {isCreatingNew && companies.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={cancelNewCompany}
+                          className="px-3 py-1 rounded-xl text-xs font-bold text-[#0B7C3C] hover:bg-[#D7F27A] transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      )}
+                      {!isCreatingNew && selectedCompany && (
+                        <button
+                          type="button"
+                          onClick={removeCompany}
+                          disabled={saving}
+                          className="p-2 rounded-xl text-[#E1584A] bg-[#E1584A15] hover:bg-[#E1584A25] transition-colors"
+                          title="Delete this company track"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   <div>
@@ -573,7 +638,7 @@ export default function CompanyBankAdmin() {
                     style={{ background: "#0FA34E", color: "#F6E9D2", fontFamily: '"Baloo 2", cursive' }}
                   >
                     {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    {selectedCompany ? "Update Company Details" : "Create Recruiter Entry"}
+                    {isCreatingNew ? "Create Recruiter Track 🚀" : "Update Recruiter Track"}
                   </button>
                 </motion.form>
 
