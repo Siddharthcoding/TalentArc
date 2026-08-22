@@ -14,7 +14,8 @@ import {
   Send,
   Sparkles,
   HelpCircle,
-  BookOpen
+  BookOpen,
+  Layers
 } from "lucide-react";
 import { getCompanies, contributeCompanyQuestion } from "@/services/api";
 import { useAuth } from "@/context/AuthContext";
